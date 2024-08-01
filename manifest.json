@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "Content Templatizer",
+    "version": "1.0",
+    "description": "Analyze and templatize social media posts for specific industries or services",
+    "permissions": ["activeTab", "storage"],
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://*.linkedin.com/*", "https://*.twitter.com/*"],
+        "js": ["content.js"]
+      }
+    ]
+  }
