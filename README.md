@@ -1,0 +1,1 @@
+# content_template_extension
