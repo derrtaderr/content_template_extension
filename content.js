@@ -17,6 +17,7 @@
       }
   
       if (selectedPost) {
+        console.log("Selected post:", selectedPost);
         chrome.runtime.sendMessage({action: "postSelected", post: selectedPost});
       }
     }
