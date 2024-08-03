@@ -18,36 +18,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load settings when popup opens
     loadSettings();
   
-    // Request the latest selected post when the popup opens
-    function getSelectedPost() {
-      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        if (tabs[0]) {
-          chrome.tabs.sendMessage(tabs[0].id, {action: "getSelectedPost"}, function(response) {
-            if (chrome.runtime.lastError) {
-              console.log("Error sending message:", chrome.runtime.lastError.message);
-              selectedPost.value = "Please refresh the LinkedIn page and try again.";
-            } else if (response && response.post) {
-              selectedPost.value = response.post;
-              console.log("Received selected post in popup:", response.post);
-            } else {
-              selectedPost.value = "Please select a post on LinkedIn and try again.";
-            }
-          });
-        } else {
-          console.log("No active tab found");
-          selectedPost.value = "Please open LinkedIn and select a post.";
-        }
-      });
-    }
-  
-    getSelectedPost();
-  
-    // Listen for messages from the content script
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.action === "postSelected") {
-        selectedPost.value = request.post;
-        console.log("Received selected post:", request.post);
-        sendResponse({received: true});
+    // Load the selected post from storage
+    chrome.storage.local.get(['selectedPost'], function(result) {
+      if (result.selectedPost) {
+        selectedPost.value = result.selectedPost;
+        console.log("Loaded post from storage:", result.selectedPost);
+      } else {
+        selectedPost.value = "Please select a post on LinkedIn and try again.";
       }
     });
   

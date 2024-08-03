@@ -1,15 +1,8 @@
 console.log("Content script loaded");
 
 let selectedPost = null;
-let isConnectionValid = true;
 
 function handleMouseUp(event) {
-  if (!isConnectionValid) {
-    console.log("Connection invalid, attempting to reconnect...");
-    reconnectToExtension();
-    return;
-  }
-
   console.log("Mouse up detected");
   const linkedInPost = event.target.closest('.feed-shared-update-v2, .occludable-update, article');
   if (linkedInPost) {
@@ -18,7 +11,9 @@ function handleMouseUp(event) {
     if (postText) {
       selectedPost = postText;
       console.log("Selected post:", selectedPost);
-      sendMessageToExtension({action: "postSelected", post: selectedPost});
+      chrome.storage.local.set({selectedPost: selectedPost}, function() {
+        console.log('Post saved to storage');
+      });
     } else {
       console.log("Could not find post text");
     }
@@ -41,41 +36,4 @@ function extractPostContent(postElement) {
   }
 }
 
-function sendMessageToExtension(message) {
-  try {
-    chrome.runtime.sendMessage(message, function(response) {
-      if (chrome.runtime.lastError) {
-        console.log("Error sending message:", chrome.runtime.lastError.message);
-        isConnectionValid = false;
-      } else {
-        console.log("Message sent, response:", response);
-      }
-    });
-  } catch (error) {
-    console.log("Error sending message:", error);
-    isConnectionValid = false;
-  }
-}
-
-function reconnectToExtension() {
-  try {
-    chrome.runtime.connect();
-    isConnectionValid = true;
-    console.log("Reconnected to extension");
-  } catch (error) {
-    console.log("Failed to reconnect:", error);
-    isConnectionValid = false;
-  }
-}
-
 document.addEventListener('mouseup', handleMouseUp);
-
-// Listen for messages from the popup
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "getSelectedPost") {
-    sendResponse({post: selectedPost});
-  }
-});
-
-// Attempt to reconnect when the script loads
-reconnectToExtension();
