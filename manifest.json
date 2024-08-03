@@ -6,7 +6,7 @@
     "permissions": ["activeTab", "storage"],
     "host_permissions": [
       "https://*.linkedin.com/*",
-      "https://*.twitter.com/*"
+      "https://api.anthropic.com/*"
     ],
     "action": {
       "default_popup": "popup.html"
@@ -16,7 +16,7 @@
     },
     "content_scripts": [
       {
-        "matches": ["https://*.linkedin.com/*", "https://*.twitter.com/*"],
+        "matches": ["https://*.linkedin.com/*"],
         "js": ["content.js"]
       }
     ],

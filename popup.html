@@ -8,11 +8,11 @@
   <div id="mainSection">
     <h1>Content Templatizer</h1>
     <button id="refreshBtn">Refresh Post</button>
-    <textarea id="selectedPost" readonly></textarea>
+    <div id="selectedPostContainer"></div>
     <button id="templatizeBtn">Templatize</button>
     <div id="templateResult">
       <h2>Framework: <span id="frameworkOutput"></span></h2>
-      <textarea id="templateOutput"></textarea>
+      <div id="templateOutput"></div>
       <h3>Placeholders:</h3>
       <ul id="placeholderList"></ul>
     </div>
@@ -24,8 +24,11 @@
 
   <div id="settingsSection" style="display: none;">
     <h2>Settings</h2>
-    <label for="apiKey">Claude API Key:</label>
-    <input type="password" id="apiKey">
+    <div id="apiKeySection">
+      <label for="apiKey">Claude API Key (required):</label>
+      <input type="password" id="apiKey">
+      <p class="help-text">You need to set your Claude API key to use the templatization feature.</p>
+    </div>
     <label for="industrySelect">Your Industry:</label>
     <select id="industrySelect">
       <option value="">Select an industry</option>
