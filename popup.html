@@ -8,46 +8,26 @@
     select, input, textarea { width: 100%; margin-top: 5px; }
     textarea { height: 100px; }
     button { margin-top: 10px; }
-    #settingsSection { display: none; }
   </style>
 </head>
 <body>
-  <h2>Content Templatizer</h2>
-  
   <div id="mainSection">
-    <label for="selectedPost">Selected Post:</label>
-    <textarea id="selectedPost" placeholder="The selected post will appear here" readonly></textarea>
-
+    <textarea id="selectedPost" placeholder="Selected post will appear here" readonly></textarea>
     <button id="templatizeBtn">Templatize</button>
-
-    <label for="templateOutput">Templatized Output:</label>
-    <textarea id="templateOutput" placeholder="The templatized content will appear here" readonly></textarea>
-
+    <textarea id="templateOutput" placeholder="Templatized output will appear here" readonly></textarea>
     <button id="openSettingsBtn">Open Settings</button>
   </div>
 
-  <div id="settingsSection">
-    <h3>Settings</h3>
-    <label for="industrySelect">Your Industry:</label>
+  <div id="settingsSection" style="display:none;">
     <select id="industrySelect">
-      <option value="">Select an industry</option>
+      <option value="">Select Industry</option>
       <option value="tech">Technology</option>
       <option value="finance">Finance</option>
       <option value="healthcare">Healthcare</option>
-      <option value="education">Education</option>
-      <option value="marketing">Marketing</option>
-      <option value="other">Other</option>
     </select>
-
-    <label for="targetMarket">Target Market:</label>
-    <input type="text" id="targetMarket" placeholder="e.g., Small businesses, Millennials">
-
-    <label for="audience">Target Audience:</label>
-    <input type="text" id="audience" placeholder="e.g., CEOs, HR managers">
-
-    <label for="keyProducts">Key Products/Services:</label>
-    <input type="text" id="keyProducts" placeholder="e.g., AI software, Consulting services">
-
+    <input type="text" id="targetMarket" placeholder="Target Market">
+    <input type="text" id="audience" placeholder="Target Audience">
+    <input type="text" id="keyProducts" placeholder="Key Products/Services">
     <button id="saveSettingsBtn">Save Settings</button>
     <button id="closeSettingsBtn">Close Settings</button>
   </div>
