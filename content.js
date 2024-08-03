@@ -1,40 +1,54 @@
 console.log("Content script loaded");
 
-function handleMouseUp(event) {
-  console.log("Mouse up detected");
-  const linkedInPost = event.target.closest('.feed-shared-update-v2, .occludable-update, article');
-  if (linkedInPost) {
-    console.log("LinkedIn post detected");
-    const postText = extractPostContent(linkedInPost);
-    if (postText) {
-      console.log("Selected post:", postText);
-      chrome.runtime.sendMessage({action: "postSelected", post: postText}, function(response) {
-        console.log("Response from background script:", response);
-      });
-    } else {
-      console.log("Could not find post text");
-    }
-  } else {
-    console.log("No LinkedIn post detected");
-  }
-}
-
-function extractPostContent(postElement) {
+function extractLinkedInPost(postElement) {
   const contentElement = postElement.querySelector('.feed-shared-update-v2__description, .feed-shared-text, .break-words, [data-test-id="post-view-body"]');
   if (!contentElement) return null;
 
-  // Clone the content to avoid modifying the original
-  const clonedContent = contentElement.cloneNode(true);
+  const content = contentElement.textContent.trim();
+  const author = postElement.querySelector('.feed-shared-actor__name')?.textContent.trim() || 'Unknown';
+  const engagementMetrics = {
+    likes: postElement.querySelector('.social-details-social-counts__reactions-count')?.textContent.trim() || '0',
+    comments: postElement.querySelector('.social-details-social-counts__comments')?.textContent.trim() || '0'
+  };
 
-  // Replace <br> tags with newline characters
-  clonedContent.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+  return { content, author, engagementMetrics, platform: 'LinkedIn' };
+}
 
-  // Preserve paragraph breaks
-  clonedContent.querySelectorAll('p, div').forEach(p => {
-    p.insertAdjacentHTML('afterend', '\n\n');
-  });
+function extractTwitterPost(postElement) {
+  const content = postElement.querySelector('[data-testid="tweetText"]')?.textContent.trim();
+  if (!content) return null;
 
-  return clonedContent.innerText.trim();
+  const author = postElement.querySelector('[data-testid="User-Name"]')?.textContent.trim() || 'Unknown';
+  const engagementMetrics = {
+    likes: postElement.querySelector('[data-testid="like"]')?.textContent.trim() || '0',
+    retweets: postElement.querySelector('[data-testid="retweet"]')?.textContent.trim() || '0'
+  };
+
+  return { content, author, engagementMetrics, platform: 'Twitter' };
+}
+
+function handleMouseUp(event) {
+  console.log("Mouse up detected");
+  const linkedInPost = event.target.closest('.feed-shared-update-v2, .occludable-update, article');
+  const twitterPost = event.target.closest('[data-testid="tweet"]');
+  
+  let postData = null;
+  if (linkedInPost) {
+    console.log("LinkedIn post detected");
+    postData = extractLinkedInPost(linkedInPost);
+  } else if (twitterPost) {
+    console.log("Twitter post detected");
+    postData = extractTwitterPost(twitterPost);
+  }
+
+  if (postData) {
+    console.log("Selected post:", postData);
+    chrome.runtime.sendMessage({action: "postSelected", post: postData}, function(response) {
+      console.log("Response from background script:", response);
+    });
+  } else {
+    console.log("No valid post detected");
+  }
 }
 
 document.addEventListener('mouseup', handleMouseUp);

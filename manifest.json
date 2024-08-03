@@ -5,7 +5,8 @@
     "description": "AI-powered content templatizer for social media posts",
     "permissions": ["activeTab", "storage"],
     "host_permissions": [
-      "https://*.linkedin.com/*"
+      "https://*.linkedin.com/*",
+      "https://*.twitter.com/*"
     ],
     "action": {
       "default_popup": "popup.html"
@@ -15,8 +16,14 @@
     },
     "content_scripts": [
       {
-        "matches": ["https://*.linkedin.com/*"],
+        "matches": ["https://*.linkedin.com/*", "https://*.twitter.com/*"],
         "js": ["content.js"]
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": ["api.js", "templateManager.js"],
+        "matches": ["<all_urls>"]
       }
     ]
   }
