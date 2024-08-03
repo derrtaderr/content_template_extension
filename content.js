@@ -1,7 +1,5 @@
 console.log("Content script loaded");
 
-let selectedPost = null;
-
 function handleMouseUp(event) {
   console.log("Mouse up detected");
   const linkedInPost = event.target.closest('.feed-shared-update-v2, .occludable-update, article');
@@ -9,10 +7,9 @@ function handleMouseUp(event) {
     console.log("LinkedIn post detected");
     const postText = extractPostContent(linkedInPost);
     if (postText) {
-      selectedPost = postText;
-      console.log("Selected post:", selectedPost);
-      chrome.storage.local.set({selectedPost: selectedPost}, function() {
-        console.log('Post saved to storage');
+      console.log("Selected post:", postText);
+      chrome.runtime.sendMessage({action: "postSelected", post: postText}, function(response) {
+        console.log("Response from background script:", response);
       });
     } else {
       console.log("Could not find post text");
@@ -26,14 +23,18 @@ function extractPostContent(postElement) {
   const contentElement = postElement.querySelector('.feed-shared-update-v2__description, .feed-shared-text, .break-words, [data-test-id="post-view-body"]');
   if (!contentElement) return null;
 
-  // Preserve line breaks and structure
-  const paragraphs = contentElement.querySelectorAll('p, br, li');
-  if (paragraphs.length > 0) {
-    return Array.from(paragraphs).map(p => p.textContent.trim()).join('\n\n');
-  } else {
-    // If no paragraphs found, return the whole text content
-    return contentElement.textContent.trim().replace(/\s+/g, ' ');
-  }
+  // Clone the content to avoid modifying the original
+  const clonedContent = contentElement.cloneNode(true);
+
+  // Replace <br> tags with newline characters
+  clonedContent.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+
+  // Preserve paragraph breaks
+  clonedContent.querySelectorAll('p, div').forEach(p => {
+    p.insertAdjacentHTML('afterend', '\n\n');
+  });
+
+  return clonedContent.innerText.trim();
 }
 
 document.addEventListener('mouseup', handleMouseUp);

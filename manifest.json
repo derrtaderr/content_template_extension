@@ -3,16 +3,19 @@
     "name": "Content Templatizer",
     "version": "1.0",
     "description": "AI-powered content templatizer for social media posts",
-    "permissions": ["activeTab", "storage", "tabs"],
+    "permissions": ["activeTab", "storage"],
     "host_permissions": [
-      "http://localhost:3000/*"
+      "https://*.linkedin.com/*"
     ],
     "action": {
       "default_popup": "popup.html"
     },
+    "background": {
+      "service_worker": "background.js"
+    },
     "content_scripts": [
       {
-        "matches": ["https://*.linkedin.com/*", "https://*.twitter.com/*"],
+        "matches": ["https://*.linkedin.com/*"],
         "js": ["content.js"]
       }
     ]
