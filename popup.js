@@ -1,5 +1,4 @@
 import { analyzePostWithClaude } from './api.js';
-import { templateManager } from './templateManager.js';
 
 document.addEventListener('DOMContentLoaded', function() {
   const selectedPostContainer = document.getElementById('selectedPostContainer');
@@ -13,9 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const mainSection = document.getElementById('mainSection');
   const settingsSection = document.getElementById('settingsSection');
   const refreshBtn = document.getElementById('refreshBtn');
-  const saveTemplateBtn = document.getElementById('saveTemplateBtn');
-  const displayTemplatesBtn = document.getElementById('displayTemplatesBtn');
-  const templateList = document.getElementById('templateList');
+  const copyTemplateBtn = document.getElementById('copyTemplateBtn');
+  const categorySelect = document.getElementById('categorySelect');
 
   const industrySelect = document.getElementById('industrySelect');
   const targetMarket = document.getElementById('targetMarket');
@@ -40,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
       } else {
         console.log("No post received");
-        selectedPostContainer.textContent = "No post selected. Please select a post on LinkedIn.";
+        selectedPostContainer.textContent = "No post selected. Please select a post on LinkedIn or Twitter.";
       }
     });
   }
@@ -68,7 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const response = await chrome.runtime.sendMessage({action: "getSelectedPost"});
       if (response && response.post) {
-        const analysisResult = await analyzePostWithClaude(response.post, apiKey);
+        const category = categorySelect.value;
+        const analysisResult = await analyzePostWithClaude(response.post, apiKey, category);
         displayTemplateResult(analysisResult);
       } else {
         alert('No post selected. Please select a post first.');
@@ -83,20 +82,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultLines = result.split('\n');
     let currentSection = '';
     frameworkOutput.textContent = '';
-    templateOutput.innerHTML = '';
+    templateOutput.value = '';
     placeholderList.innerHTML = '';
 
     for (const line of resultLines) {
       if (line.startsWith('1. ')) {
-        currentSection = 'framework';
-      } else if (line.startsWith('2. ')) {
         currentSection = 'template';
-      } else if (line.startsWith('3. ')) {
+      } else if (line.startsWith('2. ')) {
         currentSection = 'placeholders';
-      } else if (currentSection === 'framework') {
-        frameworkOutput.textContent += line + '\n';
       } else if (currentSection === 'template') {
-        templateOutput.innerHTML += line + '<br>';
+        templateOutput.value += line + '\n';
       } else if (currentSection === 'placeholders') {
         const li = document.createElement('li');
         li.textContent = line;
@@ -105,27 +100,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  templatizeBtn.addEventListener('click', templatizePost);
-
-  async function saveTemplate() {
-    const templateContent = templateOutput.innerHTML;
-    const framework = frameworkOutput.textContent;
-    await templateManager.saveTemplate({content: templateContent, framework: framework});
-    alert('Template saved successfully!');
-  }
-
-  async function displaySavedTemplates() {
-    const templates = await templateManager.loadTemplates();
-    templateList.innerHTML = '';
-    templates.forEach(template => {
-      const li = document.createElement('li');
-      li.textContent = `${template.framework}: ${template.content.substring(0, 50)}...`;
-      templateList.appendChild(li);
+  function copyToClipboard() {
+    const templateContent = templateOutput.value;
+    navigator.clipboard.writeText(templateContent).then(() => {
+      alert('Template copied to clipboard!');
+    }, () => {
+      alert('Failed to copy template. Please try again.');
     });
   }
 
-  saveTemplateBtn.addEventListener('click', saveTemplate);
-  displayTemplatesBtn.addEventListener('click', displaySavedTemplates);
+  templatizeBtn.addEventListener('click', templatizePost);
+  copyTemplateBtn.addEventListener('click', copyToClipboard);
 
   function openSettings() {
     mainSection.style.display = 'none';
@@ -171,5 +156,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function loadCategories() {
+    const categories = ['Growth', 'Knowledge', 'Authority', 'Empathize'];
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category.toLowerCase();
+      option.textContent = category;
+      categorySelect.appendChild(option);
+    });
+  }
+
   loadSettings();
+  loadCategories();
 });

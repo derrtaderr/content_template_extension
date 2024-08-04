@@ -9,16 +9,16 @@
     <h1>Content Templatizer</h1>
     <button id="refreshBtn">Refresh Post</button>
     <div id="selectedPostContainer"></div>
+    <label for="categorySelect">Content Category:</label>
+    <select id="categorySelect"></select>
     <button id="templatizeBtn">Templatize</button>
     <div id="templateResult">
-      <h2>Framework: <span id="frameworkOutput"></span></h2>
-      <div id="templateOutput"></div>
+      <h2>Template:</h2>
+      <textarea id="templateOutput" readonly></textarea>
+      <button id="copyTemplateBtn">Copy to Clipboard</button>
       <h3>Placeholders:</h3>
       <ul id="placeholderList"></ul>
     </div>
-    <button id="saveTemplateBtn">Save Template</button>
-    <button id="displayTemplatesBtn">My Templates</button>
-    <ul id="templateList"></ul>
     <button id="openSettingsBtn">Settings</button>
   </div>
 
