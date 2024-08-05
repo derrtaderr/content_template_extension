@@ -1,8 +1,19 @@
 console.log("Content script loaded");
 
+let lastDetectedPlatform = null;
+
+function getCurrentPlatform() {
+  if (window.location.hostname.includes('linkedin.com')) {
+    return 'LinkedIn';
+  } else if (window.location.hostname.includes('twitter.com')) {
+    return 'Twitter';
+  }
+  return 'Unknown';
+}
+
 function extractLinkedInPost(postElement) {
   console.log("Extracting LinkedIn post");
-  const contentElement = postElement.querySelector('.feed-shared-update-v2__description, .feed-shared-text, .break-words, [data-test-id="post-view-body"]');
+  const contentElement = postElement.querySelector('.feed-shared-update-v2__description, .feed-shared-text, .break-words, [data-testid="post-view-body"]');
   if (!contentElement) {
     console.log("LinkedIn content element not found");
     return null;
@@ -21,17 +32,19 @@ function extractLinkedInPost(postElement) {
 
 function extractTwitterPost(tweetElement) {
   console.log("Extracting Twitter post");
-  const contentElement = tweetElement.querySelector('[data-testid="tweetText"]');
+  const contentElement = tweetElement.querySelector('div[data-testid="tweetText"]');
   if (!contentElement) {
     console.log("Twitter content element not found");
     return null;
   }
 
   const content = contentElement.innerText.trim();
-  const author = tweetElement.querySelector('[data-testid="User-Name"]')?.textContent.trim() || 'Unknown';
+  const authorElement = tweetElement.querySelector('div[data-testid="User-Name"]');
+  const author = authorElement ? authorElement.textContent.trim() : 'Unknown';
+  
   const engagementMetrics = {
-    likes: tweetElement.querySelector('[data-testid="like"]')?.textContent.trim() || '0',
-    retweets: tweetElement.querySelector('[data-testid="retweet"]')?.textContent.trim() || '0'
+    likes: tweetElement.querySelector('div[data-testid="like"] span')?.textContent.trim() || '0',
+    retweets: tweetElement.querySelector('div[data-testid="retweet"] span')?.textContent.trim() || '0'
   };
 
   console.log("Extracted tweet:", { content, author, engagementMetrics });
@@ -40,18 +53,31 @@ function extractTwitterPost(tweetElement) {
 
 function handleMouseUp(event) {
   console.log("Mouse up detected");
-  const linkedInPost = event.target.closest('.feed-shared-update-v2, .occludable-update, article');
-  const twitterPost = event.target.closest('[data-testid="tweet"]');
-  
+  const currentPlatform = getCurrentPlatform();
+  console.log("Current platform:", currentPlatform);
+
   let postData = null;
-  if (linkedInPost) {
-    console.log("LinkedIn post detected");
-    postData = extractLinkedInPost(linkedInPost);
-  } else if (twitterPost) {
-    console.log("Twitter post detected");
-    postData = extractTwitterPost(twitterPost);
-  } else {
-    console.log("No relevant post detected");
+
+  if (currentPlatform === 'LinkedIn') {
+    const linkedInPost = event.target.closest('.feed-shared-update-v2, .occludable-update, article');
+    if (linkedInPost) {
+      console.log("LinkedIn post detected");
+      postData = extractLinkedInPost(linkedInPost);
+    }
+  } else if (currentPlatform === 'Twitter') {
+    const twitterPost = event.target.closest('article[data-testid="tweet"]');
+    if (twitterPost) {
+      console.log("Twitter post detected");
+      postData = extractTwitterPost(twitterPost);
+    }
+  }
+
+  if (currentPlatform !== lastDetectedPlatform) {
+    console.log("Platform changed, clearing previous post data");
+    chrome.runtime.sendMessage({action: "clearPost"}, function(response) {
+      console.log("Cleared previous post data:", response);
+    });
+    lastDetectedPlatform = currentPlatform;
   }
 
   if (postData) {
@@ -60,7 +86,7 @@ function handleMouseUp(event) {
       console.log("Response from background script:", response);
     });
   } else {
-    console.log("Failed to extract post data");
+    console.log("No relevant post detected or failed to extract post data");
   }
 }
 
