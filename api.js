@@ -1,6 +1,8 @@
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
 async function analyzePostWithClaude(postData, apiKey, category) {
+  console.log("Analyzing post with Claude:", postData, category);
+
   const prompt = `Analyze the following social media post and create a template based on Justin Welsh's ${category} category. Replace specific details with placeholders in ALL_CAPS_WITH_UNDERSCORES. Maintain the original structure, formatting, and line breaks. Do not include any HTML tags or markdown formatting in the output.
 
 Post content:
@@ -34,6 +36,7 @@ Please provide:
     }
 
     const data = await response.json();
+    console.log("Claude API response:", data);
     return data.content[0].text;
   } catch (error) {
     console.error('Error calling Claude API:', error);

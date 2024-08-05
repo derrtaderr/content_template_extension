@@ -62,12 +62,18 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Please set your Claude API key in the settings before templatizing.');
       return;
     }
-
+  
     try {
+      console.log("Requesting selected post for templatization");
       const response = await chrome.runtime.sendMessage({action: "getSelectedPost"});
+      console.log("Received response:", response);
+      
       if (response && response.post) {
         const category = categorySelect.value;
+        console.log("Selected category:", category);
+        console.log("Sending post to Claude API:", response.post);
         const analysisResult = await analyzePostWithClaude(response.post, apiKey, category);
+        console.log("Received analysis result:", analysisResult);
         displayTemplateResult(analysisResult);
       } else {
         console.error('No post data received:', response);

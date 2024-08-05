@@ -1,17 +1,16 @@
-console.log("Background script loaded");
-
 let selectedPost = null;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Background script received message:", request);
+  
   if (request.action === "postSelected") {
     selectedPost = request.post;
-    console.log("Background script stored post:", selectedPost);
-    sendResponse({status: "Post received by background script"});
-    return true;
+    console.log("Stored selected post:", selectedPost);
+    sendResponse({status: "Post stored successfully"});
   } else if (request.action === "getSelectedPost") {
-    console.log("Background script sending post:", selectedPost);
+    console.log("Returning selected post:", selectedPost);
     sendResponse({post: selectedPost});
-    return true;
   }
+  
+  return true; // Keeps the message channel open for asynchronous response
 });
