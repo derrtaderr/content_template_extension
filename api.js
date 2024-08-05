@@ -1,15 +1,17 @@
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
 async function analyzePostWithClaude(postData, apiKey, category) {
-  const prompt = `Analyze the following social media post and create a template based on Justin Welsh's ${category} category. Replace specific details with placeholders.
+  const prompt = `Analyze the following social media post and create a template based on Justin Welsh's ${category} category. Replace specific details with placeholders in ALL_CAPS_WITH_UNDERSCORES. Maintain the original structure, formatting, and line breaks. Do not include any HTML tags or markdown formatting in the output.
 
-Post content: ${postData.content}
+Post content:
+${postData.content}
+
 Author: ${postData.author}
 Platform: ${postData.platform}
 Engagement: ${JSON.stringify(postData.engagementMetrics)}
 
 Please provide:
-1. A templatized version of the post
+1. A templatized version of the post, maintaining the original structure and line breaks
 2. A list of placeholders and their descriptions`;
 
   try {

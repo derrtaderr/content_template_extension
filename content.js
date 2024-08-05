@@ -8,15 +8,18 @@ function extractLinkedInPost(postElement) {
     return null;
   }
 
-  const content = contentElement.innerHTML; // Use innerHTML to preserve formatting
+  // Extract text content without HTML tags
+  const content = contentElement.innerText.trim();
   const author = postElement.querySelector('.feed-shared-actor__name')?.textContent.trim() || 'Unknown';
+  const authorTitle = postElement.querySelector('.feed-shared-actor__description')?.textContent.trim() || '';
+  const timestamp = postElement.querySelector('.feed-shared-actor__sub-description')?.textContent.trim() || '';
   const engagementMetrics = {
     likes: postElement.querySelector('.social-details-social-counts__reactions-count')?.textContent.trim() || '0',
     comments: postElement.querySelector('.social-details-social-counts__comments')?.textContent.trim() || '0'
   };
 
-  console.log("Extracted post:", { content, author, engagementMetrics });
-  return { content, author, engagementMetrics, platform: 'LinkedIn' };
+  console.log("Extracted post:", { content, author, authorTitle, timestamp, engagementMetrics });
+  return { content, author, authorTitle, timestamp, engagementMetrics, platform: 'LinkedIn' };
 }
 
 function handleMouseUp(event) {

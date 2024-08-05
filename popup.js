@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const selectedPostContainer = document.getElementById('selectedPostContainer');
   const templatizeBtn = document.getElementById('templatizeBtn');
   const templateOutput = document.getElementById('templateOutput');
-  const frameworkOutput = document.getElementById('frameworkOutput');
   const placeholderList = document.getElementById('placeholderList');
   const openSettingsBtn = document.getElementById('openSettingsBtn');
   const saveSettingsBtn = document.getElementById('saveSettingsBtn');
@@ -32,9 +31,10 @@ document.addEventListener('DOMContentLoaded', function() {
       } else if (response && response.post) {
         console.log("Received post:", response.post);
         selectedPostContainer.innerHTML = `
-          <strong>Author:</strong> ${response.post.author}<br>
-          <strong>Engagement:</strong> ${JSON.stringify(response.post.engagementMetrics)}<br><br>
-          ${response.post.content}
+          <strong>${response.post.author}</strong> ${response.post.authorTitle ? `• ${response.post.authorTitle}` : ''}<br>
+          <small>${response.post.timestamp}</small><br><br>
+          ${response.post.content.replace(/\n/g, '<br>')}<br><br>
+          <small>Likes: ${response.post.engagementMetrics.likes} • Comments: ${response.post.engagementMetrics.comments}</small>
         `;
       } else {
         console.log("No post received");
@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const analysisResult = await analyzePostWithClaude(response.post, apiKey, category);
         displayTemplateResult(analysisResult);
       } else {
+        console.error('No post data received:', response);
         alert('No post selected. Please select a post first.');
       }
     } catch (error) {
@@ -81,18 +82,18 @@ document.addEventListener('DOMContentLoaded', function() {
   function displayTemplateResult(result) {
     const resultLines = result.split('\n');
     let currentSection = '';
-    frameworkOutput.textContent = '';
-    templateOutput.value = '';
-    placeholderList.innerHTML = '';
+    
+    if (templateOutput) templateOutput.value = '';
+    if (placeholderList) placeholderList.innerHTML = '';
 
     for (const line of resultLines) {
       if (line.startsWith('1. ')) {
         currentSection = 'template';
       } else if (line.startsWith('2. ')) {
         currentSection = 'placeholders';
-      } else if (currentSection === 'template') {
+      } else if (currentSection === 'template' && templateOutput) {
         templateOutput.value += line + '\n';
-      } else if (currentSection === 'placeholders') {
+      } else if (currentSection === 'placeholders' && placeholderList) {
         const li = document.createElement('li');
         li.textContent = line;
         placeholderList.appendChild(li);
