@@ -46,64 +46,13 @@ function extractTwitterPost(tweetElement) {
   const authorElement = tweetElement.querySelector('div[data-testid="User-Name"]');
   const author = authorElement ? authorElement.textContent.trim() : 'Unknown';
   
-  const tweetNumberElement = tweetElement.querySelector('span[data-testid="tweetText"] > span');
-  const tweetNumber = tweetNumberElement ? tweetNumberElement.textContent.trim().split('/')[0] : '';
-
   const engagementMetrics = {
     likes: tweetElement.querySelector('div[data-testid="like"] span')?.textContent.trim() || '0',
     retweets: tweetElement.querySelector('div[data-testid="retweet"] span')?.textContent.trim() || '0'
   };
 
-  return {
-    content,
-    author,
-    tweetNumber,
-    engagementMetrics,
-    platform: 'Twitter'
-  };
-}
-
-function extractTwitterThread(initialTweet) {
-  console.log("Extracting Twitter thread");
-  let threadTweets = [extractTwitterPost(initialTweet)];
-  let currentTweet = initialTweet;
-
-  while (true) {
-    let nextTweet = currentTweet.nextElementSibling;
-    if (nextTweet && nextTweet.matches('div[class="css-175oi2r"]')) {
-      const tweetArticle = nextTweet.querySelector('article[data-testid="tweet"]');
-      if (tweetArticle) {
-        const extractedTweet = extractTwitterPost(tweetArticle);
-        if (extractedTweet) {
-          threadTweets.push(extractedTweet);
-          currentTweet = nextTweet;
-          continue;
-        }
-      }
-    }
-    break;
-  }
-
-  console.log(`Extracted ${threadTweets.length} tweets from thread`);
-  return threadTweets;
-}
-
-function handleTwitterPost(clickedElement) {
-  const tweetArticle = clickedElement.closest('article[data-testid="tweet"]');
-  if (!tweetArticle) {
-    console.log("No tweet found");
-    return null;
-  }
-
-  const isThread = !!tweetArticle.querySelector('div[aria-label="Thread"]');
-  
-  if (isThread) {
-    console.log("Thread detected");
-    return extractTwitterThread(tweetArticle);
-  } else {
-    console.log("Single tweet detected");
-    return [extractTwitterPost(tweetArticle)];
-  }
+  console.log("Extracted Twitter post:", { content, author, engagementMetrics });
+  return { content, author, engagementMetrics, platform: 'Twitter' };
 }
 
 function handleMouseUp(event) {
@@ -120,7 +69,11 @@ function handleMouseUp(event) {
       postData = extractLinkedInPost(linkedInPost);
     }
   } else if (currentPlatform === 'Twitter') {
-    postData = handleTwitterPost(event.target);
+    const tweetElement = event.target.closest('article[data-testid="tweet"]');
+    if (tweetElement) {
+      console.log("Twitter post detected");
+      postData = extractTwitterPost(tweetElement);
+    }
   }
 
   if (currentPlatform !== lastDetectedPlatform) {
