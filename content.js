@@ -38,17 +38,72 @@ function extractTwitterPost(tweetElement) {
     return null;
   }
 
-  const content = contentElement.innerText.trim();
+  const contentClone = contentElement.cloneNode(true);
+  contentClone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+  contentClone.querySelectorAll('div').forEach(div => div.insertAdjacentHTML('afterend', '\n\n'));
+  
+  const content = contentClone.innerText.trim();
   const authorElement = tweetElement.querySelector('div[data-testid="User-Name"]');
   const author = authorElement ? authorElement.textContent.trim() : 'Unknown';
   
+  const tweetNumberElement = tweetElement.querySelector('span[data-testid="tweetText"] > span');
+  const tweetNumber = tweetNumberElement ? tweetNumberElement.textContent.trim().split('/')[0] : '';
+
   const engagementMetrics = {
     likes: tweetElement.querySelector('div[data-testid="like"] span')?.textContent.trim() || '0',
     retweets: tweetElement.querySelector('div[data-testid="retweet"] span')?.textContent.trim() || '0'
   };
 
-  console.log("Extracted tweet:", { content, author, engagementMetrics });
-  return { content, author, engagementMetrics, platform: 'Twitter' };
+  return {
+    content,
+    author,
+    tweetNumber,
+    engagementMetrics,
+    platform: 'Twitter'
+  };
+}
+
+function extractTwitterThread(initialTweet) {
+  console.log("Extracting Twitter thread");
+  let threadTweets = [extractTwitterPost(initialTweet)];
+  let currentTweet = initialTweet;
+
+  while (true) {
+    let nextTweet = currentTweet.nextElementSibling;
+    if (nextTweet && nextTweet.matches('div[class="css-175oi2r"]')) {
+      const tweetArticle = nextTweet.querySelector('article[data-testid="tweet"]');
+      if (tweetArticle) {
+        const extractedTweet = extractTwitterPost(tweetArticle);
+        if (extractedTweet) {
+          threadTweets.push(extractedTweet);
+          currentTweet = nextTweet;
+          continue;
+        }
+      }
+    }
+    break;
+  }
+
+  console.log(`Extracted ${threadTweets.length} tweets from thread`);
+  return threadTweets;
+}
+
+function handleTwitterPost(clickedElement) {
+  const tweetArticle = clickedElement.closest('article[data-testid="tweet"]');
+  if (!tweetArticle) {
+    console.log("No tweet found");
+    return null;
+  }
+
+  const isThread = !!tweetArticle.querySelector('div[aria-label="Thread"]');
+  
+  if (isThread) {
+    console.log("Thread detected");
+    return extractTwitterThread(tweetArticle);
+  } else {
+    console.log("Single tweet detected");
+    return [extractTwitterPost(tweetArticle)];
+  }
 }
 
 function handleMouseUp(event) {
@@ -65,11 +120,7 @@ function handleMouseUp(event) {
       postData = extractLinkedInPost(linkedInPost);
     }
   } else if (currentPlatform === 'Twitter') {
-    const twitterPost = event.target.closest('article[data-testid="tweet"]');
-    if (twitterPost) {
-      console.log("Twitter post detected");
-      postData = extractTwitterPost(twitterPost);
-    }
+    postData = handleTwitterPost(event.target);
   }
 
   if (currentPlatform !== lastDetectedPlatform) {

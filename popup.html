@@ -1,54 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Content Templatizer</title>
-  <link rel="stylesheet" type="text/css" href="styles.css">
+    <title>Content Templatizer</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-  <div id="mainSection">
     <h1>Content Templatizer</h1>
+    
     <button id="refreshBtn">Refresh Post</button>
+    
     <div id="selectedPostContainer"></div>
-    <label for="categorySelect">Content Category:</label>
-    <select id="categorySelect"></select>
-    <button id="templatizeBtn">Templatize</button>
-    <div id="templateResult">
-      <h2>Template:</h2>
-      <textarea id="templateOutput" readonly></textarea>
-      <button id="copyTemplateBtn">Copy to Clipboard</button>
-      <h3>Placeholders:</h3>
-      <ul id="placeholderList"></ul>
-    </div>
-    <button id="openSettingsBtn">Settings</button>
-  </div>
-
-  <div id="settingsSection" style="display: none;">
-    <h2>Settings</h2>
-    <div id="apiKeySection">
-      <label for="apiKey">Claude API Key (required):</label>
-      <input type="password" id="apiKey">
-      <p class="help-text">You need to set your Claude API key to use the templatization feature.</p>
-    </div>
-    <label for="industrySelect">Your Industry:</label>
-    <select id="industrySelect">
-      <option value="">Select an industry</option>
-      <option value="technology">Technology</option>
-      <option value="finance">Finance</option>
-      <option value="healthcare">Healthcare</option>
-      <option value="education">Education</option>
-      <option value="marketing">Marketing</option>
-      <option value="other">Other</option>
+    
+    <select id="categorySelect">
+        <option value="Growth">Growth</option>
+        <option value="Knowledge">Knowledge</option>
+        <option value="Authority">Authority</option>
+        <option value="Empathize">Empathize</option>
     </select>
-    <label for="targetMarket">Target Market:</label>
-    <input type="text" id="targetMarket">
-    <label for="audience">Target Audience:</label>
-    <input type="text" id="audience">
-    <label for="keyProducts">Key Products/Services:</label>
-    <input type="text" id="keyProducts">
-    <button id="saveSettingsBtn">Save Settings</button>
-    <button id="closeSettingsBtn">Close</button>
-  </div>
+    
+    <button id="templatizeBtn">Templatize</button>
+    
+    <div id="templateResult">
+        <h2>Template:</h2>
+        <textarea id="templateOutput" readonly></textarea>
+        <button id="copyToClipboardBtn">Copy to Clipboard</button>
+    </div>
+    
+    <div id="placeholders">
+        <h3>Placeholders:</h3>
+        <ul id="placeholderList"></ul>
+    </div>
+    
+    <button id="openSettingsBtn">Settings</button>
+    
+    <div id="settingsSection" style="display: none;">
+        <h2>Settings</h2>
+        <label for="apiKey">API Key:</label>
+        <input type="text" id="apiKey">
+        <label for="industrySelect">Industry:</label>
+        <select id="industrySelect">
+            <!-- Add industry options here -->
+        </select>
+        <label for="targetMarket">Target Market:</label>
+        <input type="text" id="targetMarket">
+        <label for="audience">Audience:</label>
+        <input type="text" id="audience">
+        <label for="keyProducts">Key Products/Services:</label>
+        <input type="text" id="keyProducts">
+        <button id="saveSettingsBtn">Save</button>
+        <button id="closeSettingsBtn">Close</button>
+    </div>
 
-  <script type="module" src="popup.js"></script>
+    <script src="popup.js"></script>
 </body>
 </html>

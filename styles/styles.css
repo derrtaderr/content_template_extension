@@ -96,3 +96,29 @@ button:hover {
   color: #666;
   margin-top: 5px;
 }
+
+/* Existing styles */
+/* ... */
+
+/* Add these styles for thread display */
+.tweet {
+  border-bottom: 1px solid #ccc;
+  padding: 10px 0;
+}
+
+.tweet:last-child {
+  border-bottom: none;
+}
+
+.tweet-author {
+  font-weight: bold;
+}
+
+.tweet-position {
+  color: #666;
+  font-size: 12px;
+}
+
+.tweet-content {
+  margin-top: 5px;
+}

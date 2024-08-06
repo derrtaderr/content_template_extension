@@ -3,7 +3,10 @@
     "name": "Content Templatizer",
     "version": "1.0",
     "description": "AI-powered content templatizer for social media posts",
-    "permissions": ["activeTab", "storage"],
+    "permissions": [
+      "activeTab",
+      "storage"
+    ],
     "host_permissions": [
       "https://*.linkedin.com/*",
       "https://*.twitter.com/*",
@@ -13,17 +16,21 @@
       "default_popup": "popup.html"
     },
     "background": {
-      "service_worker": "background.js"
+      "service_worker": "background.js",
+      "type": "module"
     },
     "content_scripts": [
       {
-        "matches": ["https://*.linkedin.com/*", "https://*.twitter.com/*"],
+        "matches": [
+          "https://*.linkedin.com/*",
+          "https://*.twitter.com/*"
+        ],
         "js": ["content.js"]
       }
     ],
     "web_accessible_resources": [
       {
-        "resources": ["api.js", "templateManager.js"],
+        "resources": ["api.js"],
         "matches": ["<all_urls>"]
       }
     ]
