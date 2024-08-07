@@ -9,11 +9,11 @@
     ],
     "host_permissions": [
       "https://*.linkedin.com/*",
-      "https://*.twitter.com/*",
       "https://api.anthropic.com/*"
     ],
     "action": {
-      "default_popup": "popup.html"
+      "default_popup": "popup.html",
+      "default_width": 800
     },
     "background": {
       "service_worker": "background.js",
@@ -22,16 +22,15 @@
     "content_scripts": [
       {
         "matches": [
-          "https://*.linkedin.com/*",
-          "https://*.twitter.com/*"
+          "https://*.linkedin.com/*"
         ],
         "js": ["content.js"]
       }
     ],
     "web_accessible_resources": [
       {
-        "resources": ["api.js"],
+        "resources": ["api.js", "styles/styles.css"],
         "matches": ["<all_urls>"]
       }
     ]
-  }
+}

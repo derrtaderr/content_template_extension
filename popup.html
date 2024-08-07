@@ -2,50 +2,47 @@
 <html>
 <head>
     <title>Content Templatizer</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="styles/styles.css">
 </head>
 <body>
-    <h1>Content Templatizer</h1>
-    
-    <button id="refreshBtn">Refresh Post</button>
-    
-    <div id="selectedPostContainer"></div>
-    
-    <select id="categorySelect">
-        <option value="Growth">Growth</option>
-        <option value="Knowledge">Knowledge</option>
-        <option value="Authority">Authority</option>
-        <option value="Empathize">Empathize</option>
-    </select>
-    
-    <button id="templatizeBtn">Templatize</button>
-    
-    <div id="templateResult">
-        <h2>Template:</h2>
-        <textarea id="templateOutput" readonly></textarea>
-        <button id="copyToClipboardBtn">Copy to Clipboard</button>
+    <nav>
+        <button id="homeBtn">Home</button>
+        <button id="settingsBtn">Settings</button>
+    </nav>
+    <div id="mainView">
+        <div id="originalPost">
+            <h2>Original Post</h2>
+            <div id="postContent"></div>
+            <select id="categorySelect">
+                <option value="Growth">Growth</option>
+                <option value="Knowledge">Knowledge</option>
+                <option value="Authority">Authority</option>
+                <option value="Empathize">Empathize</option>
+            </select>
+        </div>
+        
+        <div id="templatizedPost">
+            <h2>Templatized Post</h2>
+            <textarea id="templateOutput" readonly></textarea>
+        </div>
     </div>
-    
-    <button id="openSettingsBtn">Settings</button>
-    
-    <div id="settingsSection" style="display: none;">
+    <div id="buttonContainer">
+        <div id="leftButtons">
+            <button id="refreshBtn">Refresh Post</button>
+        </div>
+        <div id="rightButtons">
+            <button id="templatizeBtn">Templatize</button>
+            <button id="copyToClipboardBtn">Copy to Clipboard</button>
+        </div>
+    </div>
+    <div id="settingsView" style="display: none;">
         <h2>Settings</h2>
-        <label for="apiKey">API Key:</label>
-        <input type="text" id="apiKey">
-        <label for="industrySelect">Industry:</label>
-        <select id="industrySelect">
-            <!-- Add industry options here -->
-        </select>
-        <label for="targetMarket">Target Market:</label>
-        <input type="text" id="targetMarket">
-        <label for="audience">Audience:</label>
-        <input type="text" id="audience">
-        <label for="keyProducts">Key Products/Services:</label>
-        <input type="text" id="keyProducts">
-        <button id="saveSettingsBtn">Save</button>
-        <button id="closeSettingsBtn">Close</button>
+        <label for="userProfile">Your Professional Profile:</label>
+        <textarea id="userProfile"></textarea>
+        <label for="targetAudience">Target Audience:</label>
+        <textarea id="targetAudience"></textarea>
+        <button id="saveSettingsBtn">Save Settings</button>
     </div>
-
     <script src="popup.js"></script>
 </body>
 </html>

@@ -1,20 +1,27 @@
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
-async function analyzePostWithClaude(postData, apiKey, category) {
-  console.log("Analyzing post with Claude:", postData, category);
+async function analyzePostWithClaude(postData, apiKey, category, userSettings) {
+  console.log("Analyzing post with Claude:", postData, category, userSettings);
 
-  const prompt = `Analyze the following social media post and create a template based on Justin Welsh's ${category} category. Replace specific details with placeholders in ALL_CAPS_WITH_UNDERSCORES. Maintain the original structure, formatting, and line breaks. Do not include any HTML tags or markdown formatting in the output.
+  const prompt = `As an AI specialized in content templatization, your task is to create a template based on the given social media post. Consider the user's profile and target audience to guide your templatization process, making it more relevant and effective for their specific needs.
 
-Post content:
-${postData.content}
+User Profile: ${userSettings.userProfile}
+Target Audience: ${userSettings.targetAudience}
+Content Category: ${category}
 
-Author: ${postData.author}
-Platform: ${postData.platform}
-Engagement: ${JSON.stringify(postData.engagementMetrics)}
+Original Post:
+${postData}
+
+Instructions:
+1. Analyze the post structure, tone, and key elements.
+2. Create a template by replacing specific details with placeholders in ALL_CAPS_WITH_UNDERSCORES format.
+3. Ensure the template aligns with the user's profile and resonates with their target audience.
+4. Maintain the original post's structure, formatting, and line breaks.
+5. The template should be adaptable for creating similar content in the future.
 
 Please provide:
-1. A templatized version of the post, maintaining the original structure and line breaks
-2. A list of placeholders and their descriptions`;
+1. A templatized version of the post, maintaining the original structure and line breaks.
+2. A list of placeholders used and their descriptions, explaining how they relate to the user's profile or target audience.`;
 
   try {
     const response = await fetch(CLAUDE_API_URL, {

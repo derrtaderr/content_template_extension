@@ -4,6 +4,17 @@ console.log("Background script loaded");
 
 let selectedPost = null;
 
+function stripHtmlTags(html) {
+    return html.replace(/<[^>]*>/g, '');
+}
+
+function preserveStructure(html) {
+    return html.replace(/<br\s*\/?>/gi, '\n')
+               .replace(/<\/p>\s*<p>/gi, '\n\n')
+               .replace(/<li>/gi, '\n• ')
+               .replace(/<[^>]*>/g, '');
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Background script received message:", request);
     if (request.action === "postSelected") {
@@ -21,17 +32,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({status: "Post cleared"});
         return true;
     } else if (request.action === "templatize") {
-        chrome.storage.sync.get(['apiKey'], function(result) {
+        chrome.storage.sync.get(['apiKey', 'userProfile', 'targetAudience'], function(result) {
             const apiKey = result.apiKey;
+            const userSettings = {
+                userProfile: result.userProfile || '',
+                targetAudience: result.targetAudience || ''
+            };
             if (!apiKey) {
                 sendResponse({error: "API key not set. Please set it in the settings."});
                 return;
             }
             
-            analyzePostWithClaude(request.post, apiKey, request.category)
+            const structuredContent = preserveStructure(request.post.content);
+            
+            analyzePostWithClaude(structuredContent, apiKey, request.category, userSettings)
                 .then(result => {
-                    const template = removePlaceholders(result);
-                    sendResponse({template: template});
+                    const [template, placeholders] = parseClaudeResult(result);
+                    sendResponse({template: template, placeholders: placeholders});
                 })
                 .catch(error => {
                     console.error("Templatization error:", error);
@@ -42,12 +59,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-function removePlaceholders(template) {
-    // Remove placeholder descriptions
-    template = template.replace(/2\. A list of placeholders and their descriptions[\s\S]*$/, '');
-    
-    // Remove placeholder markup
-    template = template.replace(/\{\{[^}]+\}\}/g, '');
-    
-    return template.trim();
+function parseClaudeResult(result) {
+    const parts = result.split('2. A list of placeholders used and their descriptions');
+    const template = parts[0].replace('1. A templatized version of the post, maintaining the original structure and line breaks.\n', '').trim();
+    const placeholders = parts[1] ? parts[1].trim().split('\n').map(p => p.trim()) : [];
+    return [template, placeholders];
 }
