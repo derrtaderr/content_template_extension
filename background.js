@@ -12,6 +12,7 @@ function preserveStructure(html) {
     return html.replace(/<br\s*\/?>/gi, '\n')
                .replace(/<\/p>\s*<p>/gi, '\n\n')
                .replace(/<li>/gi, '\n• ')
+               .replace(/<\/div>\s*<div>/gi, '\n')  // For Twitter's div-based structure
                .replace(/<[^>]*>/g, '');
 }
 

@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const userProfile = document.getElementById('userProfile');
     const targetAudience = document.getElementById('targetAudience');
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const newCategory = document.getElementById('newCategory');
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    const categoryList = document.getElementById('categoryList');
 
     function showMainView() {
         mainView.style.display = 'flex';
@@ -25,10 +28,45 @@ document.addEventListener('DOMContentLoaded', function() {
     homeBtn.addEventListener('click', showMainView);
     settingsBtn.addEventListener('click', showSettingsView);
 
-    function stripHtmlTags(html) {
-        let doc = new DOMParser().parseFromString(html, 'text/html');
-        return doc.body.textContent || "";
+    function loadCategories() {
+        chrome.storage.sync.get(['categories'], function(result) {
+            const categories = result.categories || [];
+            categoryList.innerHTML = '';
+            categories.forEach(category => {
+                const li = document.createElement('li');
+                li.textContent = category;
+                categoryList.appendChild(li);
+            });
+            updateCategoryDropdown(categories);
+        });
     }
+
+    function updateCategoryDropdown(categories) {
+        const select = document.getElementById('categorySelect');
+        select.innerHTML = '';
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            select.appendChild(option);
+        });
+    }
+
+    addCategoryBtn.addEventListener('click', function() {
+        const category = newCategory.value.trim();
+        if (category) {
+            chrome.storage.sync.get(['categories'], function(result) {
+                const categories = result.categories || [];
+                if (!categories.includes(category)) {
+                    categories.push(category);
+                    chrome.storage.sync.set({categories: categories}, function() {
+                        newCategory.value = '';
+                        loadCategories();
+                    });
+                }
+            });
+        }
+    });
 
     function loadSelectedPost() {
         chrome.runtime.sendMessage({action: "getSelectedPost"}, function(response) {
@@ -37,8 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 postContent.textContent = "Error: Could not retrieve selected post.";
             } else if (response && response.post) {
                 postContent.innerHTML = response.post.content;
+                document.getElementById('postPlatform').textContent = response.post.platform;
             } else {
-                postContent.textContent = "No post selected. Please select a post on LinkedIn.";
+                postContent.textContent = "No post selected. Please select a post on Twitter or LinkedIn.";
             }
         });
     }
@@ -93,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    loadCategories();
     loadSettings();
     loadSelectedPost();
     showMainView();

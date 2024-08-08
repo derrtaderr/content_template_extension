@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Content Templatizer</title>
+    <title>Viral Vault</title>
     <link rel="stylesheet" type="text/css" href="styles/styles.css">
 </head>
 <body>
     <nav>
-        <button id="homeBtn">Home</button>
-        <button id="settingsBtn">Settings</button>
+        <div class="nav-left">
+            <h1>Viral Vault</h1>
+        </div>
+        <div class="nav-right">
+            <button id="homeBtn">Home</button>
+            <button id="settingsBtn">Settings</button>
+        </div>
     </nav>
+
     <div id="mainView">
         <div id="originalPost">
-            <h2>Original Post</h2>
+            <h2>Original Post (<span id="postPlatform"></span>)</h2>
             <div id="postContent"></div>
-            <select id="categorySelect">
-                <option value="Growth">Growth</option>
-                <option value="Knowledge">Knowledge</option>
-                <option value="Authority">Authority</option>
-                <option value="Empathize">Empathize</option>
-            </select>
+            <select id="categorySelect"></select>
         </div>
-        
         <div id="templatizedPost">
             <h2>Templatized Post</h2>
             <textarea id="templateOutput" readonly></textarea>
         </div>
     </div>
+
     <div id="buttonContainer">
         <div id="leftButtons">
             <button id="refreshBtn">Refresh Post</button>
@@ -35,14 +36,22 @@
             <button id="copyToClipboardBtn">Copy to Clipboard</button>
         </div>
     </div>
+
     <div id="settingsView" style="display: none;">
         <h2>Settings</h2>
         <label for="userProfile">Your Professional Profile:</label>
         <textarea id="userProfile"></textarea>
         <label for="targetAudience">Target Audience:</label>
         <textarea id="targetAudience"></textarea>
+        
+        <h3>Categories</h3>
+        <input type="text" id="newCategory" placeholder="Add new category">
+        <button id="addCategoryBtn">Add Category</button>
+        <ul id="categoryList"></ul>
+        
         <button id="saveSettingsBtn">Save Settings</button>
     </div>
+
     <script src="popup.js"></script>
 </body>
 </html>
