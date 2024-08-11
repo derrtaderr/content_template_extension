@@ -12,7 +12,7 @@ function preserveStructure(html) {
     return html.replace(/<br\s*\/?>/gi, '\n')
                .replace(/<\/p>\s*<p>/gi, '\n\n')
                .replace(/<li>/gi, '\n• ')
-               .replace(/<\/div>\s*<div>/gi, '\n')  // For Twitter's div-based structure
+               .replace(/<\/div>\s*<div>/gi, '\n')
                .replace(/<[^>]*>/g, '');
 }
 
@@ -57,6 +57,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
         });
         return true;
+    } else if (request.action === "generatePost") {
+        // Use chrome.storage.sync.get in a Promise wrapper
+        new Promise((resolve) => {
+            chrome.storage.sync.get(['apiKey'], resolve);
+        })
+        .then(result => {
+            const apiKey = result.apiKey;
+            if (!apiKey) {
+                throw new Error("API key not set. Please set it in the settings.");
+            }
+            return generatePostFromTemplate(request.template, request.category, request.userSettings, apiKey);
+        })
+        .then(generatedPost => {
+            chrome.runtime.sendMessage({
+                action: "postGenerated",
+                generatedPost: generatedPost
+            });
+        })
+        .catch(error => {
+            console.error("Error generating post:", error);
+            chrome.runtime.sendMessage({
+                action: "postGenerated",
+                error: error.message
+            });
+        });
+        return true; // Keep the message channel open
     }
 });
 
@@ -66,3 +92,26 @@ function parseClaudeResult(result) {
     const placeholders = parts[1] ? parts[1].trim().split('\n').map(p => p.trim()) : [];
     return [template, placeholders];
 }
+
+async function generatePostFromTemplate(template, category, userSettings, apiKey) {
+    console.log("Generating post from template:", template, category, userSettings);
+    try {
+        const generatedPost = await analyzePostWithClaude(template, apiKey, category, userSettings, true);
+        
+        // Post-processing for Twitter
+        if (userSettings.platform === 'Twitter') {
+            return removeUnderscoresFromPlaceholders(generatedPost);
+        }
+        
+        return generatedPost;
+    } catch (error) {
+        console.error("Post generation error:", error);
+        throw new Error("Failed to generate post");
+    }
+}
+
+function removeUnderscoresFromPlaceholders(post) {
+    // Remove underscores from placeholder words
+    return post.replace(/_([A-Z_]+)_/g, '$1');
+}
+

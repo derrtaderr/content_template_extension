@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const newCategory = document.getElementById('newCategory');
     const addCategoryBtn = document.getElementById('addCategoryBtn');
     const categoryList = document.getElementById('categoryList');
+    const generateFromTemplateBtn = document.getElementById('generateFromTemplateBtn');
+    const generatedPostSection = document.getElementById('generatedPostSection');
+    const generatedPostContent = document.getElementById('generatedPostContent');
+
+    generateFromTemplateBtn.disabled = true;
 
     function showMainView() {
         mainView.style.display = 'flex';
@@ -68,14 +73,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function displayPost(post) {
+        postContent.innerHTML = post.content.replace(/\n/g, '<br>');
+        document.getElementById('postPlatform').textContent = post.platform;
+    }
+
     function loadSelectedPost() {
         chrome.runtime.sendMessage({action: "getSelectedPost"}, function(response) {
             if (chrome.runtime.lastError) {
                 console.error("Error:", chrome.runtime.lastError);
                 postContent.textContent = "Error: Could not retrieve selected post.";
             } else if (response && response.post) {
-                postContent.innerHTML = response.post.content;
-                document.getElementById('postPlatform').textContent = response.post.platform;
+                displayPost(response.post);
             } else {
                 postContent.textContent = "No post selected. Please select a post on Twitter or LinkedIn.";
             }
@@ -98,6 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             templateOutput.value = templateResponse.error;
                         } else if (templateResponse.template) {
                             templateOutput.value = templateResponse.template;
+                            generateFromTemplateBtn.disabled = false;
+                            chrome.storage.local.set({currentTemplate: templateResponse.template});
                         } else {
                             templateOutput.value = "Error generating template";
                         }
@@ -132,8 +143,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    generateFromTemplateBtn.addEventListener('click', function() {
+        const template = templateOutput.value;
+        const category = document.getElementById('categorySelect').value;
+        chrome.storage.sync.get(['userProfile', 'targetAudience'], function(items) {
+            chrome.runtime.sendMessage({
+                action: "generatePost",
+                template: template,
+                category: category,
+                userSettings: {
+                    userProfile: items.userProfile,
+                    targetAudience: items.targetAudience,
+                    platform: document.getElementById('postPlatform').textContent // Add this line
+                }
+            });
+        });
+    });
+
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+        if (request.action === "postGenerated") {
+            if (request.error) {
+                console.error('Error generating post:', request.error);
+                generatedPostContent.textContent = 'Error generating post: ' + request.error;
+            } else {
+                generatedPostContent.innerHTML = request.generatedPost.replace(/\n/g, '<br>');
+            }
+            generatedPostSection.style.display = 'block';
+        }
+    });
+
+    function clearTemplate() {
+        templateOutput.value = '';
+        generateFromTemplateBtn.disabled = true;
+        generatedPostSection.style.display = 'none';
+        chrome.storage.local.remove('currentTemplate');
+    }
+
+    refreshBtn.addEventListener('click', clearTemplate);
+
     loadCategories();
     loadSettings();
     loadSelectedPost();
     showMainView();
+
+    chrome.storage.local.get('currentTemplate', function(result) {
+        if (result.currentTemplate) {
+            templateOutput.value = result.currentTemplate;
+            generateFromTemplateBtn.disabled = false;
+        }
+    });
 });

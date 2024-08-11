@@ -1,6 +1,6 @@
 body {
   width: 780px;
-  height: 580px;
+  height: 580px; /* Slightly reduced to account for potential browser differences */
   font-family: system-ui, sans-serif;
   margin: 0;
   padding: 10px;
@@ -13,7 +13,7 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 10px; /* Increased margin */
 }
 
 .nav-left h1 {
@@ -35,7 +35,6 @@ nav {
 
 #originalPost, #templatizedPost {
   width: 50%;
-  padding: 0 5px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -56,6 +55,22 @@ nav {
   resize: none;
   border: 1px solid #ccc;
   padding: 5px;
+}
+
+#generatedPostSection {
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
+}
+
+#generatedPostContent {
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+#generateFromTemplateBtn {
+  margin-left: 10px;
 }
 
 #buttonContainer {

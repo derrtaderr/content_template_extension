@@ -3,6 +3,8 @@ console.log("Content script loaded");
 function getCurrentPlatform() {
     if (window.location.hostname.includes('linkedin.com')) {
         return 'LinkedIn';
+    } else if (window.location.hostname.includes('twitter.com')) {
+        return 'Twitter';
     }
     return 'Unknown';
 }
@@ -16,10 +18,64 @@ function extractLinkedInPost(postElement) {
     }
 
     const author = postElement.querySelector('.feed-shared-actor__name')?.textContent.trim() || 'Unknown';
-    const content = contentElement.innerHTML;
+    
+    // Clone the content to avoid modifying the original DOM
+    const contentClone = contentElement.cloneNode(true);
+    
+    // Remove the "see more" button
+    const seeMoreButton = contentClone.querySelector('.feed-shared-inline-show-more-text__see-more-less-toggle');
+    if (seeMoreButton) {
+        seeMoreButton.remove();
+    }
+
+    // Remove any collapsed content containers
+    const collapsedContent = contentClone.querySelector('.feed-shared-inline-show-more-text__container');
+    if (collapsedContent) {
+        collapsedContent.remove();
+    }
+
+    const content = contentClone.innerHTML;
 
     console.log("Extracted LinkedIn post:", { author, content });
     return { author, content, platform: 'LinkedIn' };
+}
+
+function extractTwitterPost(tweetElement) {
+    console.log("Extracting Twitter post");
+    const contentElement = tweetElement.querySelector('[data-testid="tweetText"]');
+    if (!contentElement) {
+        console.log("Twitter content element not found");
+        return null;
+    }
+
+    // Clone the content to avoid modifying the original DOM
+    const contentClone = contentElement.cloneNode(true);
+
+    // Preserve line breaks and structure
+    const formattedContent = Array.from(contentClone.childNodes)
+        .map(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent;
+            } else if (node.tagName === 'BR') {
+                return '\n';
+            } else if (node.tagName === 'SPAN' && node.classList.contains('css-901oao')) {
+                // This might be a line break in the original tweet
+                return '\n' + node.textContent;
+            } else {
+                return node.textContent;
+            }
+        })
+        .join('')
+        .trim();
+
+    const author = tweetElement.querySelector('[data-testid="User-Name"]')?.textContent.trim() || 'Unknown';
+    const engagementMetrics = {
+        likes: tweetElement.querySelector('[data-testid="like"]')?.textContent.trim() || '0',
+        retweets: tweetElement.querySelector('[data-testid="retweet"]')?.textContent.trim() || '0'
+    };
+    
+    console.log("Extracted tweet:", { formattedContent, author, engagementMetrics });
+    return { content: formattedContent, author, engagementMetrics, platform: 'Twitter' };
 }
 
 function handleMouseUp(event) {
@@ -34,6 +90,12 @@ function handleMouseUp(event) {
         if (linkedInPost) {
             console.log("LinkedIn post detected");
             postData = extractLinkedInPost(linkedInPost);
+        }
+    } else if (currentPlatform === 'Twitter') {
+        const twitterPost = event.target.closest('[data-testid="tweet"]');
+        if (twitterPost) {
+            console.log("Twitter post detected");
+            postData = extractTwitterPost(twitterPost);
         }
     }
 
