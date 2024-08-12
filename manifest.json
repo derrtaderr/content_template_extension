@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Content Templatizer",
-    "version": "1.0",
-    "description": "AI-powered content templatizer for social media posts",
+    "version": "1.1",
+    "description": "AI-powered content templatizer for social media posts with Text Blaze-like functionality",
     "permissions": [
       "activeTab",
       "storage"
@@ -10,7 +10,11 @@
     "host_permissions": [
       "https://*.linkedin.com/*",
       "https://api.anthropic.com/*",
-      "https://*.twitter.com/*"
+      "https://*.twitter.com/*",
+      "https://chat.openai.com/*",
+      "https://*.anthropic.com/*",
+      "https://chatgpt.com/*",
+      "https://claude.ai/*"
     ],
     "action": {
       "default_popup": "popup.html",
@@ -21,18 +25,28 @@
       "type": "module"
     },
     "content_scripts": [
-      {
-        "matches": [
-          "https://*.linkedin.com/*",
-          "https://*.twitter.com/*"
-        ],
-        "js": ["content.js"]
-      }
-    ],
+        {
+          "matches": [
+            "https://*.linkedin.com/*",
+            "https://*.twitter.com/*"
+          ],
+          "js": ["content.js"]
+        },
+        {
+          "matches": ["https://chatgpt.com/*","https://chat.openai.com/*"],
+          "js": ["chatgpt_content.js"],
+          "run_at": "document_idle"
+        },
+        {
+          "matches": ["https://*.anthropic.com/*", "https://claude.ai/*"],
+          "js": ["claude_content.js"]
+        }
+      ],
     "web_accessible_resources": [
         {
           "resources": ["api.js", "styles/styles.css"],
           "matches": ["<all_urls>"]
         }
-      ]
+    ]
+    
 }

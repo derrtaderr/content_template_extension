@@ -18,7 +18,16 @@ function preserveStructure(html) {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Background script received message:", request);
-    if (request.action === "postSelected") {
+    if (request.action === "getShortcutContent") {
+        chrome.storage.sync.get(['meContent', 'personaContent'], function(items) {
+            console.log("Fetched shortcut content:", items);
+            sendResponse({
+                meContent: items.meContent || '',
+                personaContent: items.personaContent || ''
+            });
+        });
+        return true;  // Indicates that the response is sent asynchronously
+    } else if (request.action === "postSelected") {
         selectedPost = request.post;
         console.log("Background script stored post:", selectedPost);
         sendResponse({status: "Post received by background script"});

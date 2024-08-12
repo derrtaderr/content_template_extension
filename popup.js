@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const generateFromTemplateBtn = document.getElementById('generateFromTemplateBtn');
     const generatedPostSection = document.getElementById('generatedPostSection');
     const generatedPostContent = document.getElementById('generatedPostContent');
+    const meContent = document.getElementById('meContent');
+    const personaContent = document.getElementById('personaContent');
 
     generateFromTemplateBtn.disabled = true;
 
@@ -129,17 +131,27 @@ document.addEventListener('DOMContentLoaded', function() {
     saveSettingsBtn.addEventListener('click', function() {
         chrome.storage.sync.set({
             userProfile: userProfile.value,
-            targetAudience: targetAudience.value
+            targetAudience: targetAudience.value,
+            meContent: meContent.value,
+            personaContent: personaContent.value
         }, function() {
-            alert('Settings saved');
-            showMainView();
+            if (chrome.runtime.lastError) {
+                console.error("Error saving settings:", chrome.runtime.lastError);
+                alert('Failed to save settings. Please try again.');
+            } else {
+                console.log("Settings saved successfully");
+                alert('Settings saved');
+                showMainView();
+            }
         });
     });
 
     function loadSettings() {
-        chrome.storage.sync.get(['userProfile', 'targetAudience'], function(items) {
+        chrome.storage.sync.get(['userProfile', 'targetAudience', 'meContent', 'personaContent'], function(items) {
             userProfile.value = items.userProfile || '';
             targetAudience.value = items.targetAudience || '';
+            meContent.value = items.meContent || '';
+            personaContent.value = items.personaContent || '';
         });
     }
 
@@ -154,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 userSettings: {
                     userProfile: items.userProfile,
                     targetAudience: items.targetAudience,
-                    platform: document.getElementById('postPlatform').textContent // Add this line
+                    platform: document.getElementById('postPlatform').textContent
                 }
             });
         });
