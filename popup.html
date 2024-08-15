@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Content Templatizer</title>
+    <title>Templatiz</title>
     <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
@@ -27,6 +27,16 @@
             <textarea id="templateOutput" readonly></textarea>
         </div>
     </div>
+
+    <div id="suggestedCategorySection" style="display: none;">
+        <h3>Suggested Category</h3>
+        <p id="suggestedCategory"></p>
+        <p id="categoryExplanation"></p>
+        <button id="acceptCategoryBtn">Accept</button>
+        <button id="rejectCategoryBtn">Reject</button>
+    </div>
+
+    <select id="categorySelect"></select>
 
     <div id="buttonContainer">
         <div id="leftButtons">
@@ -53,21 +63,20 @@
         <textarea id="targetAudience"></textarea>
 
         <h3>Categories</h3>
-        <select id="categorySelect"></select>
+        <ul id="categoryList"></ul>
         <input type="text" id="newCategory" placeholder="New category">
         <button id="addCategoryBtn">Add Category</button>
-        <ul id="categoryList"></ul>
 
         <h3>Shortcut Content</h3>
         <label for="meContent">Professional Background (/me):</label>
-        <textarea id="meContent" rows="4"></textarea>
+        <textarea id="meContent"></textarea>
 
         <label for="personaContent">Target Audience (/persona):</label>
-        <textarea id="personaContent" rows="4"></textarea>
+        <textarea id="personaContent"></textarea>
 
         <button id="saveSettingsBtn">Save Settings</button>
     </div>
 
-    <script src="popup.js" type="module"></script>
+    <script src="popup.js"></script>
 </body>
 </html>

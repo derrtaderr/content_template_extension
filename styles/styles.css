@@ -116,3 +116,43 @@ select {
   margin-bottom: 10px;
   font-size: 14px;
 }
+
+/* Add these new styles at the end of your existing CSS file */
+
+#suggestedCategorySection {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+#suggestedCategory {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+#categoryExplanation {
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+#acceptCategoryBtn, #rejectCategoryBtn {
+  margin-right: 5px;
+}
+
+/* Modify the existing #templatizedPost style to accommodate the new section */
+#templatizedPost {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; /* Changed from overflow: hidden; to allow scrolling */
+}
+
+/* Ensure the generated post section doesn't push content out of view */
+#generatedPostSection {
+  margin-top: 10px;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
+  max-height: 30%; /* Limit the height to prevent oversized content */
+  overflow-y: auto;
+}

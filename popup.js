@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const generatedPostContent = document.getElementById('generatedPostContent');
     const meContent = document.getElementById('meContent');
     const personaContent = document.getElementById('personaContent');
+    const suggestedCategorySection = document.getElementById('suggestedCategorySection');
+    const suggestedCategoryElement = document.getElementById('suggestedCategory');
+    const categoryExplanationElement = document.getElementById('categoryExplanation');
+    const acceptCategoryBtn = document.getElementById('acceptCategoryBtn');
+    const rejectCategoryBtn = document.getElementById('rejectCategoryBtn');
 
     generateFromTemplateBtn.disabled = true;
 
@@ -50,30 +55,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateCategoryDropdown(categories) {
         const select = document.getElementById('categorySelect');
-        select.innerHTML = '';
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            select.appendChild(option);
-        });
+        if (select) {
+            select.innerHTML = '';
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                select.appendChild(option);
+            });
+        } else {
+            console.error("Category select element not found");
+        }
     }
 
     addCategoryBtn.addEventListener('click', function() {
         const category = newCategory.value.trim();
         if (category) {
-            chrome.storage.sync.get(['categories'], function(result) {
-                const categories = result.categories || [];
-                if (!categories.includes(category)) {
-                    categories.push(category);
-                    chrome.storage.sync.set({categories: categories}, function() {
-                        newCategory.value = '';
-                        loadCategories();
-                    });
-                }
-            });
+            addCategory(category);
         }
     });
+
+    function addCategory(category) {
+        chrome.storage.sync.get(['categories'], function(result) {
+            const categories = result.categories || [];
+            if (!categories.includes(category)) {
+                categories.push(category);
+                chrome.storage.sync.set({categories: categories}, function() {
+                    newCategory.value = '';
+                    loadCategories();
+                });
+            }
+        });
+    }
 
     function displayPost(post) {
         postContent.innerHTML = post.content.replace(/\n/g, '<br>');
@@ -111,6 +124,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             templateOutput.value = templateResponse.template;
                             generateFromTemplateBtn.disabled = false;
                             chrome.storage.local.set({currentTemplate: templateResponse.template});
+
+                            // Display suggested category
+                            if (templateResponse.suggestedCategory) {
+                                const [category, explanation] = templateResponse.suggestedCategory.split('\n');
+                                suggestedCategoryElement.textContent = category;
+                                categoryExplanationElement.textContent = explanation;
+                                suggestedCategorySection.style.display = 'block';
+                            }
                         } else {
                             templateOutput.value = "Error generating template";
                         }
@@ -118,6 +139,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
+    });
+
+    acceptCategoryBtn.addEventListener('click', function() {
+        const category = suggestedCategoryElement.textContent.trim();
+        addCategory(category);
+        suggestedCategorySection.style.display = 'none';
+    });
+
+    rejectCategoryBtn.addEventListener('click', function() {
+        suggestedCategorySection.style.display = 'none';
     });
 
     copyToClipboardBtn.addEventListener('click', function() {
@@ -155,30 +186,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function displayGeneratedPost(postContent) {
+        const platform = document.getElementById('postPlatform').textContent;
+
+        if (platform === 'LinkedIn') {
+            // For LinkedIn, preserve line breaks and add some basic styling
+            generatedPostContent.innerHTML = postContent
+                .replace(/\n/g, '<br>')
+                .replace(/•/g, '&bull;');  // Preserve bullet points
+            generatedPostContent.style.whiteSpace = 'pre-wrap';
+        } else if (platform === 'Twitter') {
+            // For Twitter, preserve line breaks and add some Twitter-specific styling
+            generatedPostContent.innerHTML = postContent
+                .replace(/\n/g, '<br>')
+                .replace(/(#\w+)/g, '<span style="color: blue;">$1</span>')  // Highlight hashtags
+                .replace(/(@\w+)/g, '<span style="color: blue;">$1</span>'); // Highlight mentions
+            generatedPostContent.style.whiteSpace = 'pre-wrap';
+        } else {
+            // For any other platform, just preserve line breaks
+            generatedPostContent.innerHTML = postContent.replace(/\n/g, '<br>');
+        }
+
+        generatedPostSection.style.display = 'block';
+    }
+
     generateFromTemplateBtn.addEventListener('click', function() {
         const template = templateOutput.value;
         const category = document.getElementById('categorySelect').value;
         chrome.storage.sync.get(['userProfile', 'targetAudience'], function(items) {
+            const userSettings = {
+                userProfile: items.userProfile,
+                targetAudience: items.targetAudience,
+                platform: document.getElementById('postPlatform').textContent
+            };
+            console.log("Sending generate post request:", {
+                template: template,
+                category: category,
+                userSettings: userSettings
+            });
             chrome.runtime.sendMessage({
                 action: "generatePost",
                 template: template,
                 category: category,
-                userSettings: {
-                    userProfile: items.userProfile,
-                    targetAudience: items.targetAudience,
-                    platform: document.getElementById('postPlatform').textContent
+                userSettings: userSettings
+            }, function(response) {
+                if (chrome.runtime.lastError) {
+                    console.error("Error generating post:", chrome.runtime.lastError);
+                    displayGeneratedPost("Error generating post: " + chrome.runtime.lastError.message);
+                } else if (response.error) {
+                    console.error("Error generating post:", response.error);
+                    displayGeneratedPost("Error generating post: " + response.error);
+                } else {
+                    displayGeneratedPost(response.generatedPost);
                 }
             });
         });
     });
-
+    
     chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         if (request.action === "postGenerated") {
             if (request.error) {
                 console.error('Error generating post:', request.error);
                 generatedPostContent.textContent = 'Error generating post: ' + request.error;
             } else {
-                generatedPostContent.innerHTML = request.generatedPost.replace(/\n/g, '<br>');
+                displayGeneratedPost(request.generatedPost);
             }
             generatedPostSection.style.display = 'block';
         }

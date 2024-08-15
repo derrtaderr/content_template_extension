@@ -1,4 +1,5 @@
-import { analyzePostWithClaude } from './api.js';
+import { analyzePostWithClaude, suggestCategoryWithClaude } from './api.js';
+import { saveTemplate, getTemplate, updateTemplate, deleteTemplate, getAllTemplates } from './database.js';
 
 console.log("Background script loaded");
 
@@ -26,7 +27,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 personaContent: items.personaContent || ''
             });
         });
-        return true;  // Indicates that the response is sent asynchronously
+        return true;
     } else if (request.action === "postSelected") {
         selectedPost = request.post;
         console.log("Background script stored post:", selectedPost);
@@ -42,12 +43,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({status: "Post cleared"});
         return true;
     } else if (request.action === "templatize") {
-        chrome.storage.sync.get(['apiKey', 'userProfile', 'targetAudience'], function(result) {
+        chrome.storage.sync.get(['apiKey', 'userProfile', 'targetAudience', 'categories'], function(result) {
             const apiKey = result.apiKey;
             const userSettings = {
                 userProfile: result.userProfile || '',
                 targetAudience: result.targetAudience || ''
             };
+            const userCategories = result.categories || [];
             if (!apiKey) {
                 sendResponse({error: "API key not set. Please set it in the settings."});
                 return;
@@ -55,10 +57,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             
             const structuredContent = preserveStructure(request.post.content);
             
-            analyzePostWithClaude(structuredContent, apiKey, request.category, userSettings)
+            analyzePostWithClaude(structuredContent, apiKey, request.category, userSettings, userCategories)
                 .then(result => {
-                    const [template, placeholders] = parseClaudeResult(result);
-                    sendResponse({template: template, placeholders: placeholders});
+                    const [template, placeholders] = parseClaudeResult(result.template);
+                    sendResponse({
+                        template: template, 
+                        placeholders: placeholders,
+                        suggestedCategory: result.suggestedCategory
+                    });
                 })
                 .catch(error => {
                     console.error("Templatization error:", error);
@@ -67,60 +73,82 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     } else if (request.action === "generatePost") {
-        // Use chrome.storage.sync.get in a Promise wrapper
-        new Promise((resolve) => {
-            chrome.storage.sync.get(['apiKey'], resolve);
-        })
-        .then(result => {
+        console.log("Received generate post request in background:", request);
+        chrome.storage.sync.get(['apiKey', 'userProfile', 'targetAudience'], function(result) {
             const apiKey = result.apiKey;
             if (!apiKey) {
-                throw new Error("API key not set. Please set it in the settings.");
+                sendResponse({error: "API key not set. Please set it in the settings."});
+                return;
             }
-            return generatePostFromTemplate(request.template, request.category, request.userSettings, apiKey);
-        })
-        .then(generatedPost => {
-            chrome.runtime.sendMessage({
-                action: "postGenerated",
-                generatedPost: generatedPost
-            });
-        })
-        .catch(error => {
-            console.error("Error generating post:", error);
-            chrome.runtime.sendMessage({
-                action: "postGenerated",
-                error: error.message
-            });
+            const userSettings = {
+                userProfile: result.userProfile || request.userSettings.userProfile || '',
+                targetAudience: result.targetAudience || request.userSettings.targetAudience || '',
+                platform: request.userSettings.platform || ''
+            };
+            console.log("User settings in background:", userSettings);
+            generatePostFromTemplate(request.template, request.category, userSettings, apiKey)
+                .then(generatedPost => {
+                    console.log("Generated post:", generatedPost);
+                    chrome.runtime.sendMessage({
+                        action: "postGenerated",
+                        generatedPost: generatedPost
+                    });
+                })
+                .catch(error => {
+                    console.error("Error generating post:", error);
+                    chrome.runtime.sendMessage({
+                        action: "postGenerated",
+                        error: error.message
+                    });
+                });
         });
-        return true; // Keep the message channel open
+        return true;
+    } else if (request.action === "saveTemplate") {
+        saveTemplate(request.userId, request.templateData)
+            .then(templateId => sendResponse({success: true, templateId}))
+            .catch(error => sendResponse({success: false, error: error.message}));
+        return true;
+    } else if (request.action === "getTemplate") {
+        getTemplate(request.userId, request.templateId)
+            .then(template => sendResponse({success: true, template}))
+            .catch(error => sendResponse({success: false, error: error.message}));
+        return true;
+    } else if (request.action === "updateTemplate") {
+        updateTemplate(request.userId, request.templateId, request.templateData)
+            .then(() => sendResponse({success: true}))
+            .catch(error => sendResponse({success: false, error: error.message}));
+        return true;
+    } else if (request.action === "deleteTemplate") {
+        deleteTemplate(request.userId, request.templateId)
+            .then(() => sendResponse({success: true}))
+            .catch(error => sendResponse({success: false, error: error.message}));
+        return true;
+    } else if (request.action === "getAllTemplates") {
+        getAllTemplates(request.userId)
+            .then(templates => sendResponse({success: true, templates}))
+            .catch(error => sendResponse({success: false, error: error.message}));
+        return true;
     }
 });
 
 function parseClaudeResult(result) {
-    const parts = result.split('2. A list of placeholders used and their descriptions');
-    const template = parts[0].replace('1. A templatized version of the post, maintaining the original structure and line breaks.\n', '').trim();
-    const placeholders = parts[1] ? parts[1].trim().split('\n').map(p => p.trim()) : [];
-    return [template, placeholders];
+    const generatedPost = result.trim();
+    return [generatedPost, []];
 }
 
 async function generatePostFromTemplate(template, category, userSettings, apiKey) {
-    console.log("Generating post from template:", template, category, userSettings);
+    console.log("Generating post from template:", { template, category, userSettings });
+
     try {
-        const generatedPost = await analyzePostWithClaude(template, apiKey, category, userSettings, true);
-        
-        // Post-processing for Twitter
-        if (userSettings.platform === 'Twitter') {
-            return removeUnderscoresFromPlaceholders(generatedPost);
-        }
-        
-        return generatedPost;
+        const generatedPost = await analyzePostWithClaude(template, apiKey, category, userSettings, [], true);
+        console.log("Generated post:", generatedPost);
+        return generatedPost.trim();
     } catch (error) {
         console.error("Post generation error:", error);
-        throw new Error("Failed to generate post");
+        throw new Error(`Failed to generate post: ${error.message}`);
     }
 }
 
 function removeUnderscoresFromPlaceholders(post) {
-    // Remove underscores from placeholder words
     return post.replace(/_([A-Z_]+)_/g, '$1');
 }
-
