@@ -1,51 +1,49 @@
 // database.js
 
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, get, update, remove } from 'firebase/database';
+// Use a self-executing function to create a closure and avoid global variable conflicts
+(function() {
+    // Check if db has already been defined
+    if (typeof self.db === 'undefined') {
+        // Use the global firebase object to get the database
+        self.db = firebase.database();
+    }
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBzrEDWx9qiiLsDQ_tQjjj2JjI-4ZfQmcY",
-  authDomain: "templatiz-bdccd.firebaseapp.com",
-  projectId: "templatiz-bdccd",
-  storageBucket: "templatiz-bdccd.appspot.com",
-  messagingSenderId: "580096691721",
-  appId: "1:580096691721:web:5b7d94f531e6ef785fb2d8",
-  // Remove measurementId as it's not needed for the database
-  databaseURL: "https://templatiz-bdccd-default-rtdb.firebaseio.com/" // Add this line
-};
+    function saveTemplate(userId, templateData) {
+        const templateId = Date.now().toString();
+        return self.db.ref(`users/${userId}/templates/${templateId}`).set({
+            ...templateData,
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => templateId);
+    }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    function getTemplate(userId, templateId) {
+        return self.db.ref(`users/${userId}/templates/${templateId}`).once('value')
+            .then(snapshot => snapshot.val());
+    }
 
-// CRUD operations go here
-export async function saveTemplate(userId, templateData) {
-  const templateId = Date.now().toString();
-  await set(ref(db, `users/${userId}/templates/${templateId}`), {
-    ...templateData,
-    createdAt: Date.now(),
-    updatedAt: Date.now()
-  });
-  return templateId;
-}
+    function updateTemplate(userId, templateId, templateData) {
+        return self.db.ref(`users/${userId}/templates/${templateId}`).update({
+            ...templateData,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+    }
 
-export async function getTemplate(userId, templateId) {
-  const snapshot = await get(ref(db, `users/${userId}/templates/${templateId}`));
-  return snapshot.val();
-}
+    function deleteTemplate(userId, templateId) {
+        return self.db.ref(`users/${userId}/templates/${templateId}`).remove();
+    }
 
-export async function updateTemplate(userId, templateId, templateData) {
-  await update(ref(db, `users/${userId}/templates/${templateId}`), {
-    ...templateData,
-    updatedAt: Date.now()
-  });
-}
+    function getAllTemplates(userId) {
+        return self.db.ref(`users/${userId}/templates`).once('value')
+            .then(snapshot => snapshot.val());
+    }
 
-export async function deleteTemplate(userId, templateId) {
-  await remove(ref(db, `users/${userId}/templates/${templateId}`));
-}
-
-export async function getAllTemplates(userId) {
-  const snapshot = await get(ref(db, `users/${userId}/templates`));
-  return snapshot.val();
-}
+    // Make these functions available globally in the service worker context
+    self.dbFunctions = {
+        saveTemplate,
+        getTemplate,
+        updateTemplate,
+        deleteTemplate,
+        getAllTemplates
+    };
+})();

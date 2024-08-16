@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const categoryExplanationElement = document.getElementById('categoryExplanation');
     const acceptCategoryBtn = document.getElementById('acceptCategoryBtn');
     const rejectCategoryBtn = document.getElementById('rejectCategoryBtn');
+    const templateList = document.getElementById('templateList');
 
     generateFromTemplateBtn.disabled = true;
 
@@ -125,6 +126,19 @@ document.addEventListener('DOMContentLoaded', function() {
                             generateFromTemplateBtn.disabled = false;
                             chrome.storage.local.set({currentTemplate: templateResponse.template});
 
+                            // Save template to database
+                            dbFunctions.saveTemplate(getCurrentUserId(), {
+                                category: document.getElementById('categorySelect').value,
+                                content: templateResponse.template
+                            })
+                            .then(templateId => {
+                                console.log("Template saved with ID:", templateId);
+                                loadSavedTemplates();
+                            })
+                            .catch(error => {
+                                console.error("Error saving template:", error);
+                            });
+
                             // Display suggested category
                             if (templateResponse.suggestedCategory) {
                                 const [category, explanation] = templateResponse.suggestedCategory.split('\n');
@@ -190,20 +204,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const platform = document.getElementById('postPlatform').textContent;
 
         if (platform === 'LinkedIn') {
-            // For LinkedIn, preserve line breaks and add some basic styling
             generatedPostContent.innerHTML = postContent
                 .replace(/\n/g, '<br>')
-                .replace(/•/g, '&bull;');  // Preserve bullet points
+                .replace(/•/g, '&bull;');
             generatedPostContent.style.whiteSpace = 'pre-wrap';
         } else if (platform === 'Twitter') {
-            // For Twitter, preserve line breaks and add some Twitter-specific styling
             generatedPostContent.innerHTML = postContent
                 .replace(/\n/g, '<br>')
-                .replace(/(#\w+)/g, '<span style="color: blue;">$1</span>')  // Highlight hashtags
-                .replace(/(@\w+)/g, '<span style="color: blue;">$1</span>'); // Highlight mentions
+                .replace(/(#\w+)/g, '<span style="color: blue;">$1</span>')
+                .replace(/(@\w+)/g, '<span style="color: blue;">$1</span>');
             generatedPostContent.style.whiteSpace = 'pre-wrap';
         } else {
-            // For any other platform, just preserve line breaks
             generatedPostContent.innerHTML = postContent.replace(/\n/g, '<br>');
         }
 
@@ -264,9 +275,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     refreshBtn.addEventListener('click', clearTemplate);
 
+    function loadSavedTemplates() {
+        dbFunctions.getAllTemplates(getCurrentUserId())
+            .then(templates => {
+                displaySavedTemplates(templates);
+            })
+            .catch(error => {
+                console.error("Error loading templates:", error);
+            });
+    }
+
+    function displaySavedTemplates(templates) {
+        templateList.innerHTML = '';
+        for (let id in templates) {
+            const template = templates[id];
+            const li = document.createElement('li');
+            li.textContent = `${template.category}: ${template.content.substring(0, 50)}...`;
+            li.addEventListener('click', () => loadTemplate(id));
+            templateList.appendChild(li);
+        }
+    }
+
+    function loadTemplate(templateId) {
+        dbFunctions.getTemplate(getCurrentUserId(), templateId)
+            .then(template => {
+                if (template) {
+                    templateOutput.value = template.content;
+                    generateFromTemplateBtn.disabled = false;
+                } else {
+                    console.error("Template not found");
+                }
+            })
+            .catch(error => {
+                console.error("Error loading template:", error);
+            });
+    }
+
     loadCategories();
     loadSettings();
     loadSelectedPost();
+    loadSavedTemplates();
     showMainView();
 
     chrome.storage.local.get('currentTemplate', function(result) {
@@ -276,3 +324,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function getCurrentUserId() {
+    // Implement this function to return the current user's ID
+    // For now, we'll return a placeholder value
+    return "user123";
+}

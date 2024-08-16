@@ -180,4 +180,7 @@ async function generatePostWithClaude(prompt, apiKey, category, userSettings) {
     }
 }
 
-export { analyzePostWithClaude, generatePostWithClaude, suggestCategoryWithClaude };
+// Make functions globally accessible
+self.analyzePostWithClaude = analyzePostWithClaude;
+self.generatePostWithClaude = generatePostWithClaude;
+self.suggestCategoryWithClaude = suggestCategoryWithClaude;

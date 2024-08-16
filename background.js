@@ -1,7 +1,10 @@
-import { analyzePostWithClaude, suggestCategoryWithClaude } from './api.js';
-import { saveTemplate, getTemplate, updateTemplate, deleteTemplate, getAllTemplates } from './database.js';
+importScripts('lib/firebase-app.js');
+importScripts('lib/firebase-database.js');
+importScripts('firebaseConfig.js');
+importScripts('database.js');
+importScripts('api.js');
 
-console.log("Background script loaded");
+console.log("Service Worker Loaded");
 
 let selectedPost = null;
 
@@ -16,6 +19,15 @@ function preserveStructure(html) {
                .replace(/<\/div>\s*<div>/gi, '\n')
                .replace(/<[^>]*>/g, '');
 }
+
+self.addEventListener('activate', event => {
+  console.log('Service worker activated');
+});
+
+self.addEventListener('fetch', event => {
+  // This empty fetch listener is needed to make the service worker controllerchange event fire
+  // when the service worker is updated.
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Background script received message:", request);
@@ -104,27 +116,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
         return true;
     } else if (request.action === "saveTemplate") {
-        saveTemplate(request.userId, request.templateData)
+        self.dbFunctions.saveTemplate(request.userId, request.templateData)
             .then(templateId => sendResponse({success: true, templateId}))
             .catch(error => sendResponse({success: false, error: error.message}));
         return true;
     } else if (request.action === "getTemplate") {
-        getTemplate(request.userId, request.templateId)
+        self.dbFunctions.getTemplate(request.userId, request.templateId)
             .then(template => sendResponse({success: true, template}))
             .catch(error => sendResponse({success: false, error: error.message}));
         return true;
     } else if (request.action === "updateTemplate") {
-        updateTemplate(request.userId, request.templateId, request.templateData)
+        self.dbFunctions.updateTemplate(request.userId, request.templateId, request.templateData)
             .then(() => sendResponse({success: true}))
             .catch(error => sendResponse({success: false, error: error.message}));
         return true;
     } else if (request.action === "deleteTemplate") {
-        deleteTemplate(request.userId, request.templateId)
+        self.dbFunctions.deleteTemplate(request.userId, request.templateId)
             .then(() => sendResponse({success: true}))
             .catch(error => sendResponse({success: false, error: error.message}));
         return true;
     } else if (request.action === "getAllTemplates") {
-        getAllTemplates(request.userId)
+        self.dbFunctions.getAllTemplates(request.userId)
             .then(templates => sendResponse({success: true, templates}))
             .catch(error => sendResponse({success: false, error: error.message}));
         return true;

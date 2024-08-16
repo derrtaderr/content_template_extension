@@ -21,8 +21,7 @@
       "default_width": 800
     },
     "background": {
-      "service_worker": "background.js",
-      "type": "module"
+      "service_worker": "background.js"
     },
     "content_scripts": [
         {
@@ -44,9 +43,9 @@
       ],
     "web_accessible_resources": [
         {
-          "resources": ["api.js", "styles/styles.css"],
+          "resources": ["lib/firebase-app.js", "lib/firebase-database.js", "api.js", "styles/styles.css"],
           "matches": ["<all_urls>"]
         }
-    ]
-    
+     ]
+
 }
