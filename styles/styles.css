@@ -156,3 +156,23 @@ select {
   max-height: 30%; /* Limit the height to prevent oversized content */
   overflow-y: auto;
 }
+#savedTemplates {
+  margin-top: 10px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+#templateList {
+  list-style-type: none;
+  padding: 0;
+}
+
+#templateList li {
+  cursor: pointer;
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
+}
+
+#templateList li:hover {
+  background-color: #f0f0f0;
+}
