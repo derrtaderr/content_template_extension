@@ -140,6 +140,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(templates => sendResponse({success: true, templates}))
             .catch(error => sendResponse({success: false, error: error.message}));
         return true;
+    } else if (request.action === "confirmOverwrite") {
+        if (confirm(request.message)) {
+            sendResponse({confirmed: true});
+        } else {
+            sendResponse({confirmed: false});
+        }
+        return true;
+    } else if (request.action === "suggestCategory") {
+        // This is a placeholder. In a real implementation, you'd use an AI service to suggest categories.
+        const categories = ["Technology", "Business", "Marketing", "Personal Development", "Other"];
+        const suggestedCategory = categories[Math.floor(Math.random() * categories.length)];
+        sendResponse({
+            category: suggestedCategory,
+            explanation: `This post seems to be related to ${suggestedCategory} based on its content.`
+        });
     }
 });
 

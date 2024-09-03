@@ -53,3 +53,21 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Contact
 For any questions or concerns, please open an issue on this repository.
+
+## Using Saved Templates
+
+To access your saved templates:
+
+1. Open the extension popup
+2. Click on the "Templates" button in the navigation bar
+3. You'll see a list of your saved templates
+4. Use the search bar to find specific templates
+5. Click on a template to view its details
+6. From the detail view, you can edit or delete the template
+
+To create a new template:
+
+1. Select a post on LinkedIn or Twitter
+2. Click the "Templatize" button in the extension popup
+3. Edit the generated template as needed
+4. Click "Save Template" to store it for future use

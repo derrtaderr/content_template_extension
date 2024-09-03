@@ -1,14 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Templatiz</title>
-    <link rel="stylesheet" href="styles/styles.css">
-    <script src="lib/firebase-app.js"></script>
-    <script src="lib/firebase-database.js"></script>
-    <script src="firebaseConfig.js"></script>
-    <script src="database.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles/styles.css">
 </head>
 <body>
     <nav>
@@ -17,74 +11,94 @@
         </div>
         <div class="nav-right">
             <button id="homeBtn">Home</button>
+            <button id="templatesBtn">Templates</button>
             <button id="settingsBtn">Settings</button>
         </div>
     </nav>
 
-    <div id="mainView">
-        <div id="originalPost">
-            <h2>Original Post (<span id="postPlatform"></span>)</h2>
-            <div id="postContent"></div>
-        </div>
-        <div id="templatizedPost">
-            <h2>Templatized Post</h2>
-            <textarea id="templateOutput" readonly></textarea>
-        </div>
-    </div>
+    <div id="feedbackMessage" class="feedback" style="display: none;"></div>
 
-    <div id="suggestedCategorySection" style="display: none;">
-        <h3>Suggested Category</h3>
-        <p id="suggestedCategory"></p>
-        <p id="categoryExplanation"></p>
-        <button id="acceptCategoryBtn">Accept</button>
-        <button id="rejectCategoryBtn">Reject</button>
-    </div>
-
-    <select id="categorySelect"></select>
-    <div id="savedTemplates">
-        <h3>Saved Templates</h3>
-        <ul id="templateList"></ul>
-    </div>
-
-    <div id="buttonContainer">
-        <div id="leftButtons">
-            <button id="refreshBtn">Refresh Post</button>
-        </div>
-        <div id="rightButtons">
-            <button id="templatizeBtn">Templatize</button>
-            <button id="generateFromTemplateBtn">Generate from Template</button>
-            <button id="copyToClipboardBtn">Copy to Clipboard</button>
+    <div id="mainView" class="page">
+        <div class="two-column-layout">
+            <div class="column left-column">
+                <h2>Original Post (<span id="postPlatform"></span>)</h2>
+                <div id="postContent"></div>
+                <div class="button-group">
+                    <button id="refreshBtn" class="small-button">Refresh Post</button>
+                    <button id="templatizeBtn" class="small-button">Templatize</button>
+                </div>
+            </div>
+            <div class="column right-column">
+                <h2>Templatized Post</h2>
+                <textarea id="templateOutput" rows="10"></textarea>
+                <select id="categorySelect"></select>
+                <button id="saveTemplateBtn" class="small-button">Save Template</button>
+                <div class="button-group">
+                    <button id="generateFromTemplateBtn" class="small-button">Generate from Template</button>
+                    <button id="copyToClipboardBtn" class="small-button">Copy to Clipboard</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="generatedPostSection" style="display: none;">
+    <div id="templatesView" class="page" style="display: none;">
+        <h2>Saved Templates</h2>
+        <div id="categoriesList"></div>
+        <div id="templatesList"></div>
+        <input type="text" id="templateSearch" placeholder="Search templates...">
+        <select id="categoryFilter">
+            <option value="">All Categories</option>
+        </select>
+        <div id="suggestedCategorySection" style="display: none;">
+            <p>Suggested Category: <span id="suggestedCategory"></span></p>
+            <p id="categoryExplanation"></p>
+            <button id="acceptCategoryBtn">Accept</button>
+            <button id="rejectCategoryBtn">Reject</button>
+        </div>
+        <div id="templateDetailView" style="display: none;">
+            <div id="templateContent"></div>
+            <button id="editTemplateBtn">Edit</button>
+            <button id="deleteTemplateBtn">Delete</button>
+            <button id="backToListBtn">Back to List</button>
+        </div>
+    </div>
+
+    <div id="generatedPostView" class="page" style="display: none;">
         <h2>Generated Post</h2>
         <div id="generatedPostContent"></div>
+        <div id="generatedPostSection"></div>
+        <div id="generatedPostButtons">
+            <button id="generateAgainBtn">Generate Again</button>
+            <button id="postToLinkedInBtn">Post to LinkedIn</button>
+            <button id="postToTwitterBtn">Post to Twitter</button>
+            <button id="backToMainBtn">Back to Main</button>
+            <button id="copyGeneratedPostBtn">Copy to Clipboard</button>
+            <button id="backToTemplatizedBtn">Back to Templatized</button>
+        </div>
     </div>
 
-    <div id="settingsView" style="display: none;">
+    <div id="settingsView" class="page" style="display: none;">
         <h2>Settings</h2>
         <label for="userProfile">Your Professional Profile:</label>
-        <textarea id="userProfile"></textarea>
-
+        <textarea id="userProfile" rows="4"></textarea>
         <label for="targetAudience">Target Audience:</label>
-        <textarea id="targetAudience"></textarea>
-
+        <textarea id="targetAudience" rows="4"></textarea>
         <h3>Categories</h3>
-        <ul id="categoryList"></ul>
         <input type="text" id="newCategory" placeholder="New category">
         <button id="addCategoryBtn">Add Category</button>
-
+        <ul id="categoryList"></ul>
         <h3>Shortcut Content</h3>
         <label for="meContent">Professional Background (/me):</label>
-        <textarea id="meContent"></textarea>
-
+        <textarea id="meContent" rows="4"></textarea>
         <label for="personaContent">Target Audience (/persona):</label>
-        <textarea id="personaContent"></textarea>
-
+        <textarea id="personaContent" rows="4"></textarea>
         <button id="saveSettingsBtn">Save Settings</button>
     </div>
 
     <script src="popup.js"></script>
 </body>
+<script src="lib/firebase-app.js"></script>
+<script src="lib/firebase-database.js"></script>
+<script src="firebaseConfig.js"></script>
+<script src="database.js"></script>
 </html>
