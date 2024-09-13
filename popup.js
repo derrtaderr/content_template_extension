@@ -91,18 +91,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCategoryDropdown(categories) {
-        const select = document.getElementById('categorySelect');
-        if (select) {
-            select.innerHTML = '';
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category;
-                option.textContent = category;
-                select.appendChild(option);
-            });
-        } else {
-            console.error("Category select element not found");
-        }
+        const mainSelect = document.getElementById('categorySelect');
+        const modalSelect = document.getElementById('saveTemplateCategorySelect');
+        
+        [mainSelect, modalSelect].forEach(select => {
+            if (select) {
+                select.innerHTML = '<option value="">Select a category</option>';
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    select.appendChild(option);
+                });
+            }
+        });
     }
 
     if (elements.addCategoryBtn) {
@@ -161,44 +163,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (elements.templatizeBtn) {
         elements.templatizeBtn.addEventListener('click', function() {
+            showProgressBar(); // Show progress bar when templatize starts
+
             chrome.runtime.sendMessage({action: "getSelectedPost"}, function(response) {
                 if (response && response.post) {
                     chrome.storage.sync.get(['userProfile', 'targetAudience'], function(items) {
                         showFeedback('Generating template...', 'info');
+                        
                         chrome.runtime.sendMessage({
                             action: "templatize",
                             post: response.post,
                             userProfile: items.userProfile,
                             targetAudience: items.targetAudience
                         }, function(templateResponse) {
+                            hideProgressBar(); // Hide progress bar when templatize finishes
+
                             if (templateResponse.error) {
                                 if (elements.templateOutput) elements.templateOutput.value = templateResponse.error;
                                 showFeedback('Error generating template', 'error');
                             } else if (templateResponse.template) {
                                 if (elements.templateOutput) elements.templateOutput.value = templateResponse.template;
                                 if (elements.generateFromTemplateBtn) elements.generateFromTemplateBtn.disabled = false;
+                                if (elements.saveTemplateBtn) elements.saveTemplateBtn.disabled = false;
                                 chrome.storage.local.set({currentTemplate: templateResponse.template});
-
-                                // Get the selected category
-                                const categorySelect = document.getElementById('categorySelect');
-                                const selectedCategory = categorySelect ? categorySelect.value : 'Uncategorized';
-
-                                // Save template to database
-                                dbFunctions.saveTemplate(getCurrentUserId(), {
-                                    category: selectedCategory,
-                                    content: templateResponse.template
-                                })
-                                .then(templateId => {
-                                    console.log("Template saved with ID:", templateId);
-                                    showFeedback('Template saved successfully!', 'success');
-                                    updateTemplateListItem(templateId, selectedCategory, templateResponse.template);
-                                    showUndoOption(templateId);
-                                    loadSavedTemplates();
-                                })
-                                .catch(error => {
-                                    console.error("Error saving template:", error);
-                                    showFeedback(getErrorMessage(error), 'error');
-                                });
+    
+                                showFeedback('Template generated successfully', 'success');
                             } else {
                                 if (elements.templateOutput) elements.templateOutput.value = "Error generating template";
                                 showFeedback('Error generating template', 'error');
@@ -206,10 +195,105 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     });
                 } else {
+                    hideProgressBar(); // Hide progress bar if no post is selected
                     showFeedback('No post selected for templatization', 'error');
                 }
             });
         });
+    }
+
+    if (elements.saveTemplateBtn) {
+        elements.saveTemplateBtn.addEventListener('click', function() {
+            const templateContent = elements.templateOutput ? elements.templateOutput.value : '';
+            const postContent = elements.postContent ? elements.postContent.innerHTML : '';
+            const authorName = extractAuthorName(postContent); // Ensure this function is defined
+
+            showSaveTemplateModal(templateContent, postContent, authorName);
+        });
+    }
+
+    function showSaveTemplateModal(templateContent, originalPost, authorName) {
+        const modal = document.getElementById('saveTemplateModal');
+        const templateNameInput = document.getElementById('templateName');
+        const templateDescriptionInput = document.getElementById('templateDescription');
+        const categorySelect = document.getElementById('saveTemplateCategorySelect');
+        const authorNameDisplay = document.getElementById('authorNameDisplay');
+        const saveModalBtn = document.getElementById('saveModalBtn');
+        const closeSaveModalBtn = document.getElementById('closeSaveModalBtn');
+
+        if (!modal) {
+            console.error("Save template modal not found");
+            return;
+        }
+
+        modal.style.display = 'block';
+
+        if (authorNameDisplay) {
+            authorNameDisplay.textContent = authorName || 'Unknown Author';
+        }
+
+        if (categorySelect) {
+            chrome.storage.sync.get(['categories'], function(result) {
+                const categories = result.categories || [];
+                categorySelect.innerHTML = '<option value="">Select a category</option>';
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            });
+        }
+
+        if (saveModalBtn) {
+            saveModalBtn.onclick = function() {
+                const name = templateNameInput ? templateNameInput.value.trim() : '';
+                const description = templateDescriptionInput ? templateDescriptionInput.value.trim() : '';
+                const category = categorySelect ? categorySelect.value : '';
+                
+                if (name && category) {
+                    saveTemplate(templateContent, category, name, description, originalPost, authorName);
+                    modal.style.display = 'none';
+                } else {
+                    showFeedback('Please enter a template name and select a category', 'error');
+                }
+            };
+        }
+
+        if (closeSaveModalBtn) {
+            closeSaveModalBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        };
+    }
+
+    function extractAuthorName(postContent) {
+        const postElement = document.createElement('div');
+        postElement.innerHTML = postContent;
+
+        let authorName = 'Unknown Author';
+
+        // LinkedIn author extraction
+        const linkedInAuthorElement = postElement.querySelector('.update-components-actor__name');
+        if (linkedInAuthorElement) {
+            authorName = linkedInAuthorElement.textContent.trim();
+        } else {
+            // Twitter author extraction
+            const twitterAuthorElement = 
+                postElement.querySelector('[data-testid="User-Name"]') ||
+                postElement.querySelector('.css-1rynq56.r-dnmrzs.r-1udh08x.r-3s2u2q.r-bcqeeo.r-qvutc0.r-37j5jr.r-a023e6.r-rjixqe.r-16dba41.r-18u37iz.r-1wvb978');
+            if (twitterAuthorElement) {
+                authorName = twitterAuthorElement.textContent.trim();
+            }
+        }
+
+        return authorName;
     }
 
     if (elements.acceptCategoryBtn) {
@@ -406,24 +490,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const templateGrid = document.createElement('div');
                     templateGrid.className = 'template-grid';
                     categorizedTemplates[category].forEach(template => {
-                        const templateCard = document.createElement('div');
-                        templateCard.className = 'template-card';
-                        templateCard.innerHTML = `
-                            <h4>${template.name || 'Untitled'}</h4>
-                            <p>${template.content.substring(0, 50)}...</p>
-                            <div class="template-actions">
-                                <button class="edit-btn" data-id="${template.id}">Edit</button>
-                                <button class="delete-btn" data-id="${template.id}">Delete</button>
-                            </div>
-                        `;
-                        templateCard.querySelector('.edit-btn').addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            editCurrentTemplate(template.id);
-                        });
-                        templateCard.querySelector('.delete-btn').addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            deleteCurrentTemplate(template.id);
-                        });
+                        const templateCard = createTemplateCard(template);
                         templateGrid.appendChild(templateCard);
                     });
                     
@@ -437,6 +504,94 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function createTemplateCard(template) {
+        const templateCard = document.createElement('div');
+        templateCard.className = 'template-card';
+        templateCard.innerHTML = `
+            <h4>${template.name || 'Untitled'}</h4>
+            <p class="template-description">${template.description || 'No description'}</p>
+            <p class="template-preview">${template.content.substring(0, 50)}...</p>
+            <div class="template-actions">
+                <button class="edit-btn" data-id="${template.id}">Edit</button>
+                <button class="delete-btn" data-id="${template.id}">Delete</button>
+            </div>
+        `;
+        
+        // Make the entire card clickable to generate a post
+        templateCard.addEventListener('click', () => {
+            selectTemplateForGeneration(template.id);
+        });
+
+        templateCard.querySelector('.edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            editCurrentTemplate(template.id);
+        });
+        templateCard.querySelector('.delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteCurrentTemplate(template.id);
+        });
+        return templateCard;
+    }
+
+    function selectTemplateForGeneration(templateId) {
+        dbFunctions.getTemplate(getCurrentUserId(), templateId)
+            .then(template => {
+                if (template) {
+                    if (elements.templateOutput) elements.templateOutput.value = template.content;
+                    if (elements.generateFromTemplateBtn) elements.generateFromTemplateBtn.disabled = false;
+                    
+                    // Display original post if available
+                    if (elements.postContent && template.originalPost) {
+                        elements.postContent.innerHTML = `
+                            <h3>Original Post by ${template.authorName || 'Unknown Author'}</h3>
+                            <p>${template.originalPost}</p>
+                        `;
+                    }
+                    
+                    // Update the platform if available
+                    if (elements.postPlatform && template.platform) {
+                        elements.postPlatform.textContent = template.platform;
+                    }
+                    
+                    showPage('mainView');
+                    showFeedback('Template loaded for generation', 'success');
+                    
+                    // Optionally, you can automatically trigger the generation process here
+                    // generateFromTemplate(template.content);
+                } else {
+                    console.error("Template not found");
+                    showFeedback('Template not found', 'error');
+                }
+            })
+            .catch(error => {
+                console.error("Error loading template for generation:", error);
+                showFeedback('Error loading template', 'error');
+            });
+    }
+
+    function generateFromTemplate(templateContent) {
+        // This function should contain the logic to generate a post from the template
+        // You might want to use the existing logic from the generateFromTemplateBtn click handler
+        chrome.runtime.sendMessage({
+            action: "generatePost",
+            template: templateContent,
+            userId: getCurrentUserId(),
+            userSettings: {
+                platform: elements.postPlatform ? elements.postPlatform.textContent : ''
+            }
+        }, function(response) {
+            if (chrome.runtime.lastError) {
+                console.error("Error generating post:", chrome.runtime.lastError);
+                showFeedback('Error generating post', 'error');
+            } else if (response.error) {
+                console.error("Error generating post:", response.error);
+                showFeedback('Error generating post', 'error');
+            } else {
+                displayGeneratedPost(response.generatedPost);
+            }
+        });
+    }
+
     function editCurrentTemplate(templateId) {
         dbFunctions.getTemplate(getCurrentUserId(), templateId)
             .then(template => {
@@ -444,6 +599,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (elements.templateOutput) elements.templateOutput.value = template.content;
                     if (elements.categorySelect) elements.categorySelect.value = template.category || '';
                     if (elements.generateFromTemplateBtn) elements.generateFromTemplateBtn.disabled = false;
+                    
+                    // Display original post
+                    if (elements.postContent) {
+                        elements.postContent.innerHTML = `
+                            <h3>Original Post by ${template.authorName || 'Unknown Author'}</h3>
+                            <p>${template.originalPost || 'Original post not available'}</p>
+                        `;
+                    }
+                    
                     showPage('mainView');
                     showFeedback('Template loaded for editing', 'info');
                 } else {
@@ -497,8 +661,45 @@ document.addEventListener('DOMContentLoaded', function() {
             feedbackElement.className = `feedback ${type}`;
             feedbackElement.style.display = 'block';
             setTimeout(() => {
-                feedbackElement.style.display = 'none';
+                feedbackElement.classList.add('hide');
+                setTimeout(() => {
+                    feedbackElement.style.display = 'none';
+                    feedbackElement.classList.remove('hide');
+                }, 500);
             }, 5000);
+        } else {
+            console.warn("Feedback element not found");
+        }
+    }
+
+    function showProgressBar() {
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        if (progressContainer && progressBar) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (progress >= 90) {
+                    clearInterval(interval);
+                } else {
+                    progress += 10;
+                    progressBar.style.width = `${progress}%`;
+                }
+            }, 300); // Update every 300ms
+        }
+    }
+
+    function hideProgressBar() {
+        const progressContainer = document.getElementById('progressContainer');
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+                progressBar.style.width = '0%';
+            }
         }
     }
 
@@ -513,10 +714,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'Unable to save template. Please try again.';
     }
 
-    function updateTemplateListItem(templateId, category, content) {
+    function updateTemplateListItem(templateId, category, content, name, description) {
         const templateItem = document.querySelector(`[data-template-id="${templateId}"]`);
         if (templateItem) {
-            templateItem.querySelector('p').textContent = content.substring(0, 50) + '...';
+            templateItem.querySelector('h4').textContent = name || 'Untitled';
+            templateItem.querySelector('.template-description').textContent = description || 'No description';
+            templateItem.querySelector('.template-preview').textContent = content.substring(0, 50) + '...';
             templateItem.classList.add('highlight');
             setTimeout(() => templateItem.classList.remove('highlight'), 2000);
         }
@@ -543,6 +746,33 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => undoElement.remove(), 10000);
     }
 
+    function saveTemplate(content, category, name, description, originalPost, authorName) {
+        // Ensure authorName is not undefined or empty
+        authorName = authorName && authorName.trim() !== '' ? authorName : 'Unknown Author';
+
+        dbFunctions.saveTemplate(getCurrentUserId(), {
+            category: category,
+            content: content,
+            name: name,
+            description: description,
+            originalPost: originalPost,
+            authorName: authorName,
+            platform: elements.postPlatform ? elements.postPlatform.textContent : ''
+        })
+        .then(templateId => {
+            console.log("Template saved with ID:", templateId);
+            showFeedback('Template saved successfully!', 'success'); // User feedback
+            updateTemplateListItem(templateId, category, content, name, description);
+            showUndoOption(templateId);
+            loadSavedTemplates();
+        })
+        .catch(error => {
+            console.error("Error saving template:", error);
+            showFeedback(getErrorMessage(error), 'error'); // User feedback on error
+        });
+    }
+
+    // Load initial data and set up the UI
     loadCategories();
     loadSettings();
     loadSelectedPost();
@@ -566,19 +796,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Service worker registration failed:', error);
             });
     }
-});
 
-function getCurrentUserId() {
-    // For now, we'll return a placeholder value. In a real application, you'd get this from your authentication system.
-    return "user123";
-}
-
-function editCurrentTemplate() {
-    // Implement the edit functionality
-    console.log("Edit template functionality not implemented yet");
-}
-
-function deleteCurrentTemplate() {
-    // Implement the delete functionality
-    console.log("Delete template functionality not implemented yet");
-}
+    function getCurrentUserId() {
+        // For now, we'll return a placeholder value. In a real application, you'd get this from your authentication system.
+        return "user123";
+    }
+}); // End of DOMContentLoaded event listener

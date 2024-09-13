@@ -1,0 +1,51 @@
+/* Feedback Message Styles */
+.feedback {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    z-index: 1001;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    opacity: 0.95;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.feedback.success {
+    background-color: #4CAF50;
+}
+
+.feedback.error {
+    background-color: #f44336;
+}
+
+.feedback.info {
+    background-color: #2196F3;
+}
+
+/* Fade out animation */
+.feedback.hide {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    width: 100%;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    margin-top: 20px;
+    display: none; /* Hidden by default */
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 20px;
+    background-color: #4CAF50;
+    border-radius: 5px 0 0 5px;
+    transition: width 0.4s ease;
+}
